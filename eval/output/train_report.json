@@ -1,0 +1,371 @@
+{
+  "n_markers": 4220,
+  "n_pos": 57,
+  "n_neg": 4163,
+  "n_episodes": 40,
+  "feature_cols": [
+    "score",
+    "has_cut",
+    "scene_cut_det",
+    "clip_not_cut",
+    "clip_passed",
+    "clip_sim",
+    "cut_dist",
+    "silence_db",
+    "long_silence",
+    "frame_00",
+    "strong_opener",
+    "weak_opener",
+    "closer",
+    "short_prev",
+    "qa",
+    "continuation",
+    "cta",
+    "text_sim",
+    "topic_change"
+  ],
+  "logistic_regression": {
+    "cv": {
+      "folds": [
+        {
+          "fold": 0,
+          "pr_auc": 0.0271,
+          "roc_auc": 0.6396,
+          "n_pos": 8,
+          "n_neg": 837
+        },
+        {
+          "fold": 1,
+          "pr_auc": 0.0819,
+          "roc_auc": 0.7776,
+          "n_pos": 9,
+          "n_neg": 837
+        },
+        {
+          "fold": 2,
+          "pr_auc": 0.1159,
+          "roc_auc": 0.6242,
+          "n_pos": 13,
+          "n_neg": 829
+        },
+        {
+          "fold": 3,
+          "pr_auc": 0.1126,
+          "roc_auc": 0.7593,
+          "n_pos": 14,
+          "n_neg": 831
+        },
+        {
+          "fold": 4,
+          "pr_auc": 0.06,
+          "roc_auc": 0.6356,
+          "n_pos": 13,
+          "n_neg": 829
+        }
+      ],
+      "mean_pr_auc": 0.0795,
+      "mean_roc_auc": 0.6873,
+      "overall_pr_auc": 0.057,
+      "pr_table": [
+        {
+          "recall": 0.1,
+          "precision": 0.182,
+          "actual_recall": 0.105
+        },
+        {
+          "recall": 0.2,
+          "precision": 0.061,
+          "actual_recall": 0.263
+        },
+        {
+          "recall": 0.3,
+          "precision": 0.029,
+          "actual_recall": 0.333
+        },
+        {
+          "recall": 0.4,
+          "precision": 0.029,
+          "actual_recall": 0.456
+        },
+        {
+          "recall": 0.5,
+          "precision": 0.028,
+          "actual_recall": 0.509
+        },
+        {
+          "recall": 0.6,
+          "precision": 0.021,
+          "actual_recall": 0.754
+        },
+        {
+          "recall": 0.7,
+          "precision": 0.021,
+          "actual_recall": 0.754
+        },
+        {
+          "recall": 0.8,
+          "precision": 0.021,
+          "actual_recall": 0.825
+        },
+        {
+          "recall": 0.9,
+          "precision": 0.018,
+          "actual_recall": 0.912
+        }
+      ],
+      "n_folds_with_pos": 5
+    },
+    "coefficients": [
+      {
+        "feature": "long_silence",
+        "coef": -3.747
+      },
+      {
+        "feature": "clip_passed",
+        "coef": 2.8934
+      },
+      {
+        "feature": "clip_not_cut",
+        "coef": 1.9874
+      },
+      {
+        "feature": "cta",
+        "coef": -1.9163
+      },
+      {
+        "feature": "weak_opener",
+        "coef": -1.8537
+      },
+      {
+        "feature": "strong_opener",
+        "coef": -1.5964
+      },
+      {
+        "feature": "has_cut",
+        "coef": -1.592
+      },
+      {
+        "feature": "text_sim",
+        "coef": -1.2528
+      },
+      {
+        "feature": "closer",
+        "coef": 1.2124
+      },
+      {
+        "feature": "cut_dist",
+        "coef": -0.6892
+      },
+      {
+        "feature": "clip_sim",
+        "coef": -0.6398
+      },
+      {
+        "feature": "short_prev",
+        "coef": -0.5888
+      },
+      {
+        "feature": "frame_00",
+        "coef": 0.511
+      },
+      {
+        "feature": "topic_change",
+        "coef": -0.4231
+      },
+      {
+        "feature": "qa",
+        "coef": -0.2917
+      },
+      {
+        "feature": "continuation",
+        "coef": -0.1912
+      },
+      {
+        "feature": "scene_cut_det",
+        "coef": -0.1909
+      },
+      {
+        "feature": "score",
+        "coef": -0.0518
+      },
+      {
+        "feature": "silence_db",
+        "coef": -0.0239
+      },
+      {
+        "feature": "__intercept__",
+        "coef": 0.0934
+      }
+    ]
+  },
+  "random_forest": {
+    "cv": {
+      "folds": [
+        {
+          "fold": 0,
+          "pr_auc": 0.0194,
+          "roc_auc": 0.5568,
+          "n_pos": 8,
+          "n_neg": 837
+        },
+        {
+          "fold": 1,
+          "pr_auc": 0.0151,
+          "roc_auc": 0.5793,
+          "n_pos": 9,
+          "n_neg": 837
+        },
+        {
+          "fold": 2,
+          "pr_auc": 0.0491,
+          "roc_auc": 0.6377,
+          "n_pos": 13,
+          "n_neg": 829
+        },
+        {
+          "fold": 3,
+          "pr_auc": 0.038,
+          "roc_auc": 0.6696,
+          "n_pos": 14,
+          "n_neg": 831
+        },
+        {
+          "fold": 4,
+          "pr_auc": 0.02,
+          "roc_auc": 0.5959,
+          "n_pos": 13,
+          "n_neg": 829
+        }
+      ],
+      "mean_pr_auc": 0.0283,
+      "mean_roc_auc": 0.6079,
+      "overall_pr_auc": 0.0209,
+      "pr_table": [
+        {
+          "recall": 0.1,
+          "precision": 0.038,
+          "actual_recall": 0.14
+        },
+        {
+          "recall": 0.2,
+          "precision": 0.025,
+          "actual_recall": 0.228
+        },
+        {
+          "recall": 0.3,
+          "precision": 0.023,
+          "actual_recall": 0.456
+        },
+        {
+          "recall": 0.4,
+          "precision": 0.023,
+          "actual_recall": 0.456
+        },
+        {
+          "recall": 0.5,
+          "precision": 0.022,
+          "actual_recall": 0.526
+        },
+        {
+          "recall": 0.6,
+          "precision": 0.02,
+          "actual_recall": 0.667
+        },
+        {
+          "recall": 0.7,
+          "precision": 0.02,
+          "actual_recall": 0.702
+        },
+        {
+          "recall": 0.8,
+          "precision": 0.017,
+          "actual_recall": 0.825
+        },
+        {
+          "recall": 0.9,
+          "precision": 0.016,
+          "actual_recall": 0.912
+        }
+      ],
+      "n_folds_with_pos": 5
+    },
+    "feature_importance": [
+      {
+        "feature": "text_sim",
+        "importance": 0.1791
+      },
+      {
+        "feature": "clip_sim",
+        "importance": 0.1757
+      },
+      {
+        "feature": "silence_db",
+        "importance": 0.1518
+      },
+      {
+        "feature": "score",
+        "importance": 0.1224
+      },
+      {
+        "feature": "cut_dist",
+        "importance": 0.0799
+      },
+      {
+        "feature": "short_prev",
+        "importance": 0.044
+      },
+      {
+        "feature": "has_cut",
+        "importance": 0.0437
+      },
+      {
+        "feature": "long_silence",
+        "importance": 0.0396
+      },
+      {
+        "feature": "topic_change",
+        "importance": 0.0272
+      },
+      {
+        "feature": "clip_passed",
+        "importance": 0.0247
+      },
+      {
+        "feature": "frame_00",
+        "importance": 0.0203
+      },
+      {
+        "feature": "qa",
+        "importance": 0.0203
+      },
+      {
+        "feature": "continuation",
+        "importance": 0.0203
+      },
+      {
+        "feature": "clip_not_cut",
+        "importance": 0.0202
+      },
+      {
+        "feature": "scene_cut_det",
+        "importance": 0.0155
+      },
+      {
+        "feature": "closer",
+        "importance": 0.0127
+      },
+      {
+        "feature": "cta",
+        "importance": 0.001
+      },
+      {
+        "feature": "strong_opener",
+        "importance": 0.0008
+      },
+      {
+        "feature": "weak_opener",
+        "importance": 0.0007
+      }
+    ]
+  }
+}

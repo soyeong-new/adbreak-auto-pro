@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Break 마커 자동화</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg:#0f1420; --panel:#1a2233; --line:#2b3650; --text:#e8ecf4;
+    --muted:#8b97ad; --accent:#5b8cff; --cut:#ffb454; --ok:#3ddc97;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; }
+  body { background:var(--bg); color:var(--text); padding:32px 20px; line-height:1.5; }
+  .wrap { max-width:880px; margin:0 auto; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:24px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  input, textarea { width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
+          padding:10px 12px; border-radius:7px; font-size:14px; font-family:inherit; }
+  textarea { resize:vertical; }
+  .row { display:flex; gap:12px; margin-top:12px; }
+  .row > div { flex:1; }
+  button { background:var(--accent); color:#fff; border:0; padding:12px 20px; border-radius:7px;
+           font-size:14px; font-weight:600; cursor:pointer; margin-top:14px; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.toggle { background:var(--line); color:var(--text); padding:8px 14px; font-size:13px; }
+  button.dl-all { background:#2a3e22; color:var(--ok); border:1px solid var(--ok); padding:10px 18px; font-size:13px; margin-top:0; }
+  button.dl-all:hover { background:#344d2b; }
+  .dl-bar { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .status { margin-top:14px; font-size:13px; color:var(--muted); display:none; }
+  .status.on { display:block; }
+  .spin { display:inline-block; width:13px; height:13px; border:2px solid var(--line);
+          border-top-color:var(--accent); border-radius:50%; animation:s .8s linear infinite; vertical-align:-2px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+  .err { color:#ff6b6b; white-space:pre-wrap; }
+  .vid-h { font-size:15px; font-weight:700; margin:2px 0 10px; }
+  .summary { display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+  .summary b { color:var(--text); }
+  .slot-h { font-size:14px; font-weight:700; margin:16px 0 7px; }
+  .cand { border:1px solid var(--line); border-radius:8px; padding:11px 13px; margin-bottom:7px; }
+  .cand-top-line { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .tc { font-family:"JetBrains Mono",monospace; font-size:15px; font-weight:700; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:20px; }
+  .b-cut { background:var(--cut); color:#3a2a05; }
+  .b-alt { background:var(--line); color:var(--muted); }
+  .b-rec { background:var(--accent); color:#fff; }
+  .cand.top { border-color:var(--accent); background:rgba(91,140,255,.08); }
+  .score { color:var(--muted); font-size:12px; }
+  .reason { font-size:12px; color:var(--muted); margin-top:5px; }
+  a.dl { color:var(--accent); font-size:13px; }
+  .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎬 프리미어 Ad Break 마커 자동화</h1>
+  <div class="sub">조건에 맞는 광고 지점을 찾아 프리미어용 마커 XML로 내보냅니다.</div>
+
+  <div class="panel">
+    <label>기본 폴더 — 드래그한 파일을 여기서 찾습니다</label>
+    <input id="root" placeholder="/Volumes/AIPP22">
+    <label style="margin-top:14px">영상 — 파일을 이 칸에 드래그하거나, 경로를 한 줄에 하나씩 입력</label>
+    <textarea id="paths" rows="4" placeholder="여기로 영상 파일을 드래그하면 파일명이 들어옵니다.
+또는 절대경로 직접 입력:  /Volumes/AIPP22/슈카월드/SKA_S01_EP31_HD_KR.mp4
+폴더 경로도 가능:  /Volumes/AIPP22/유병재/S30/"></textarea>
+    <label style="margin-top:14px">1차 분배 규칙 (분)</label>
+    <div class="row">
+      <div><label>첫 광고 최소</label><input id="fmin" type="number" value="3"></div>
+      <div><label>첫 광고 최대</label><input id="fmax" type="number" value="10"></div>
+      <div><label>간격 최소</label><input id="gmin" type="number" value="10"></div>
+      <div><label>간격 최대</label><input id="gmax" type="number" value="15"></div>
+    </div>
+    <button id="go">분석 시작</button>
+    <div class="hint">1차 = 위 규칙대로 간격 분배한 마커 / 2차 = 같은 조건의 모든 마커(거리·개수 제한 없음). 둘 다 한 번에 계산됩니다.</div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const blobUrl = txt => URL.createObjectURL(new Blob([txt], {type:'application/xml'}));
+
+async function analyze(){
+  const paths = $('paths').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!paths.length){ alert('영상 파일 또는 폴더 경로를 입력해 주세요.'); return; }
+  $('go').disabled = true;
+  $('result').innerHTML = '';
+  const st = $('status');
+  st.className = 'status on';
+  st.innerHTML = '<span class="spin"></span> 분석 중... 영상당 수 분 걸릴 수 있습니다. (터미널에 진행상황 표시)';
+  try {
+    const res = await fetch('/api/analyze', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        video_paths: paths,
+        root: $('root').value.trim(),
+        settings: {
+          first_min: parseFloat($('fmin').value), first_max: parseFloat($('fmax').value),
+          gap_min: parseFloat($('gmin').value), gap_max: parseFloat($('gmax').value),
+        }
+      })
+    });
+    const data = await res.json();
+    if(!res.ok){ throw new Error(data.error || '분석 실패'); }
+    st.className = 'status';
+    render(data);
+  } catch(e){
+    st.className = 'status on';
+    st.innerHTML = '<span class="err">' + e.message + '</span>';
+  } finally {
+    $('go').disabled = false;
+  }
+}
+
+// 전체 다운로드용 저장소
+let _allResults = [];
+
+function render(data){
+  _allResults = data.results || [];
+  let html = '';
+
+  if(_allResults.length > 1){
+    html += '<div class="panel" style="padding:14px 18px">'
+      + '<div class="dl-bar">'
+      + '<span style="font-size:13px;color:var(--muted)">전체 '+_allResults.length+'편 일괄 다운로드</span>'
+      + '<button class="dl-all" onclick="downloadAllZip(1)">⬇ 1차 XML 전체 (ZIP)</button>'
+      + '<button class="dl-all" onclick="downloadAllZip(2)">⬇ 2차 XML 전체 (ZIP)</button>'
+      + '</div></div>';
+  }
+
+  _allResults.forEach((d,ri) => { html += renderResult(d,ri); });
+  (data.errors||[]).forEach(e => {
+    html += '<div class="panel"><div class="err">⚠ '+esc(e.path)+'\n'+esc(e.error)+'</div></div>';
+  });
+  $('result').innerHTML = html || '<div class="panel err">결과가 없습니다.</div>';
+}
+
+async function downloadAllZip(pass){
+  if(!_allResults.length) return;
+  const zip = new JSZip();
+  _allResults.forEach(d => {
+    const stem = d.video_name.replace(/\.[^.]+$/,'');
+    if(pass === 1){
+      zip.file(stem+'_adbreaks.xml', d.xml_primary);
+    } else {
+      zip.file(stem+'_adbreaks_all.xml', d.xml_all);
+    }
+  });
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = pass===1 ? 'adbreaks_1차.zip' : 'adbreaks_2차_전체.zip';
+  a.click();
+}
+
+function kindBadge(m){
+  return m.has_cut ? '<span class="badge b-cut">검증된 장면전환</span>'
+                   : '<span class="badge b-alt">참고</span>';
+}
+
+function markerList(markers){
+  if(!markers.length)
+    return '<div class="cand" style="color:var(--muted)">조건을 만족하는 지점이 없습니다.</div>';
+  let h = '';
+  markers.forEach(m => {
+    h += '<div class="cand"><div class="cand-top-line">'
+      + '<span class="tc">'+m.timecode+'</span>'
+      + kindBadge(m)
+      + '<span class="score">점수 '+m.score+'</span></div>'
+      + '<div class="reason">'+esc(m.reason)+'</div></div>';
+  });
+  return h;
+}
+
+function slotsHtml(slots){
+  if(!slots.length)
+    return '<div class="cand" style="color:var(--muted)">조건을 만족하는 광고 구간이 없습니다.</div>';
+  let h = '';
+  slots.forEach((slot, i) => {
+    h += '<div class="slot-h">광고 '+(i+1)+'</div>';
+    slot.forEach((m, j) => {
+      const top = j===0;
+      h += '<div class="cand'+(top?' top':'')+'"><div class="cand-top-line">'
+        + '<span class="tc">'+m.timecode+'</span>'
+        + '<span class="badge '+(top?'b-rec':'b-alt')+'">'+(top?'추천':'후보 '+(j+1))+'</span>'
+        + kindBadge(m)
+        + '<span class="score">점수 '+m.score+'</span></div>'
+        + '<div class="reason">'+esc(m.reason)+'</div></div>';
+    });
+  });
+  return h;
+}
+
+function renderResult(d, ri){
+  let h = '<div class="panel"><div class="vid-h">🎬 '+esc(d.video_name)+'</div>';
+  h += '<div class="summary">'
+    + '<span>길이 <b>'+d.duration_tc+'</b></span>'
+    + '<span>원본 <b>'+(d.fps?d.fps+' fps':'?')+'</b></span>'
+    + '<span>1차 <b>'+d.primary_count+'개</b> · 2차 전체 <b>'+d.marker_count+'개</b></span>'
+    + '<span>장면 컷 <b>'+d.scenes_count+'개</b></span></div>';
+
+  const near = d.fps && (Math.abs(d.fps-29.97)<0.05 || Math.abs(d.fps-30)<0.05);
+  let note = '📌 이 마커 XML은 <b>29.97 NDF</b> 기준입니다. 프리미어에서 <b>29.97 비드롭 시퀀스</b>에 import하세요.';
+  if(d.fps && !near) note += '<br>⚠ 이 영상은 '+d.fps+' fps라 — 프리미어에서 먼저 29.97 NDF로 변환 후 그 시퀀스에 넣으세요.';
+  h += '<div style="margin-top:8px;font-size:12px;color:'+(near||!d.fps?'var(--muted)':'var(--cut)')
+    + ';background:rgba(255,180,84,.08);border-radius:6px;padding:8px 10px">'+note+'</div>';
+
+  const stem = d.video_name.replace(/\.[^.]+$/,'');
+  h += '<div style="margin-top:10px">'
+    + '<a class="dl" href="'+blobUrl(d.xml_primary)+'" download="'+stem+'_adbreaks.xml">⬇ 1차 XML ('+d.primary_count+'구간)</a>'
+    + ' &nbsp;·&nbsp; '
+    + '<a class="dl" href="'+blobUrl(d.xml_all)+'" download="'+stem+'_adbreaks_all.xml">⬇ 2차 전체 XML ('+d.marker_count+'개)</a></div>';
+
+  h += '<div id="m1_'+ri+'">'+slotsHtml(d.primary_slots||[])+'</div>';
+  h += '<div id="m2_'+ri+'" style="display:none"><div class="slot-h">2차 — 조건 맞는 전체 ('+d.marker_count+'개)</div>'+markerList(d.markers||[])+'</div>';
+  h += '<button class="toggle" id="tg_'+ri+'" onclick="toggleAll('+ri+')">2차 — 전체 '+d.marker_count+'개 보기</button>';
+  return h + '</div>';
+}
+
+function toggleAll(ri){
+  const m1=$('m1_'+ri), m2=$('m2_'+ri), tg=$('tg_'+ri);
+  const showAll = m2.style.display==='none';
+  m1.style.display = showAll?'none':'';
+  m2.style.display = showAll?'':'none';
+  tg.textContent = showAll ? '1차만 보기' : ('2차 — 전체 보기');
+}
+
+$('go').addEventListener('click', analyze);
+
+// 비디오 확장자 뒤 공백을 줄바꿈으로 변환
+function normalizePathInput(text){
+  // .mp4 .mov .mkv .m4v 등 확장자 바로 뒤 공백(또는 탭)을 줄바꿈으로
+  return text.replace(/(\.(mp4|mov|mkv|m4v|mpeg|mpg|avi|wmv))\s+/gi, '$1\n').trim();
+}
+
+const ta = $('paths');
+ta.addEventListener('dragover', e => { e.preventDefault(); ta.style.borderColor='var(--accent)'; });
+ta.addEventListener('dragleave', () => { ta.style.borderColor=''; });
+ta.addEventListener('drop', e => {
+  e.preventDefault(); ta.style.borderColor='';
+  const names = [...(e.dataTransfer.files||[])].map(f=>f.name).filter(Boolean);
+  if(names.length){
+    const cur = ta.value.replace(/\s+$/,'');
+    ta.value = (cur ? cur+'\n' : '') + names.join('\n');
+  }
+});
+
+// 붙여넣기 시 자동 줄바꿈
+ta.addEventListener('paste', e => {
+  e.preventDefault();
+  const pasted = (e.clipboardData || window.clipboardData).getData('text');
+  const normalized = normalizePathInput(pasted);
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const cur = ta.value;
+  ta.value = cur.slice(0, start) + normalized + cur.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + normalized.length;
+});
+</script>
+</body>
+</html>
