@@ -21,10 +21,8 @@ _preprocess = None
 
 # CLIP image-image cosine similarity. Above SAME_THRESHOLD => same scene
 # (jump cut / framing change / graphic overlay); below => a real scene transition.
-# Frame-verified across 13 episodes: real transitions score 0.69-0.77, while
-# same-scene-with-graphics false positives start at ~0.79. 0.78 is conservative
-# -- it rejects every observed false positive (the user's main complaint).
-SAME_THRESHOLD = 0.78
+# 0.60: 앵글 변화·그래픽 오탐을 강하게 걸러냄. 진짜 장소 전환(0.3~0.55)만 통과.
+SAME_THRESHOLD = 0.60
 
 
 def _load():

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xmeml SYSTEM "http://www.apple.com/DTDs/xmeml-1.0.dtd">
+<xmeml version="5">
+  <sequence id="sequence-1">
+    <name>YBJ_S30_EP71-001_AdBreakCandidates</name>
+    <duration>42665</duration>
+    <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+    <timecode>
+      <string>00:00:00:00</string>
+      <frame>0</frame>
+      <displayformat>NDF</displayformat>
+      <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+    </timecode>
+    <media>
+      <video>
+        <format>
+          <samplecharacteristics>
+            <width>1920</width>
+            <height>1080</height>
+            <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+          </samplecharacteristics>
+        </format>
+        <track></track>
+      </video>
+    </media>
+    <marker>
+      <name>광고1 [검증전환] [00:05:05:01]</name>
+      <comment>점수 11.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.60); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s); 앞 문장이 마무리 표현으로 종료 · CLIP 검수 통과(유사도 0.67) | 텍스트유사도 0.596 | …진급을 해드리기 거기 때문에 진짜 진정승부로 오늘 한 번 좀 시작하도록 하겠습니다  ▶  애퀴즈 첫 번째 라운드는 묘사퀴즈인데요…</comment>
+      <in>9151</in>
+      <out>9151</out>
+    </marker>
+    <marker>
+      <name>광고2 [검증전환] [00:05:06:03]</name>
+      <comment>점수 11.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.58); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s); 앞 문장이 마무리 표현으로 종료 · CLIP 검수 통과(유사도 0.48) | 텍스트유사도 0.581 | …진급을 해드리기 거기 때문에 진짜 진정승부로 오늘 한 번 좀 시작하도록 하겠습니다  ▶  애퀴즈 첫 번째 라운드는 묘사퀴즈인데요…</comment>
+      <in>9183</in>
+      <out>9183</out>
+    </marker>
+    <marker>
+      <name>광고3 [검증전환] [00:03:04:03]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.51); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.74) | 텍스트유사도 0.508 | …전국에 50년대에 태어났습니다  ▶  저희 팀은 제가 애죠…</comment>
+      <in>5523</in>
+      <out>5523</out>
+    </marker>
+    <marker>
+      <name>광고4 [검증전환] [00:03:25:29]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.61); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.63) | 텍스트유사도 0.615 | …유 병재를 물리쳐라  ▶  유 병재를 물리쳐라…</comment>
+      <in>6179</in>
+      <out>6179</out>
+    </marker>
+    <marker>
+      <name>광고5 [검증전환] [00:03:34:03]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.52); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.76) | 텍스트유사도 0.518 | …또 이렇게 실례 좀 하는데 아버님 몇 년생이신지  ▶  89년생 동생이네요…</comment>
+      <in>6423</in>
+      <out>6423</out>
+    </marker>
+    <marker>
+      <name>광고6 [검증전환] [00:19:37:03]</name>
+      <comment>점수 11.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.58); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s); 앞 문장이 마무리 표현으로 종료 · CLIP 검수 통과(유사도 0.57) | 텍스트유사도 0.585 | …요거를 선물로 드리도록 하겠습니다  ▶  저거 탁하겠다 저거 탁하겠다…</comment>
+      <in>35313</in>
+      <out>35313</out>
+    </marker>
+    <marker>
+      <name>광고7 [검증전환] [00:15:06:28]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.44); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.67) | 텍스트유사도 0.440 | …2번 두 번째 라운드는 저쪽이 승리했습니다  ▶  2번 포포핑 네 지금 총 1대1대 0이죠…</comment>
+      <in>27208</in>
+      <out>27208</out>
+    </marker>
+    <marker>
+      <name>광고8 [검증전환] [00:15:32:28]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.68); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.75) | 텍스트유사도 0.682 | …우리 관유의 누나 향위랑 누나가 왔죠  ▶  왜냐하면 솔직히 니네 엄마가 너무 좀 이렇게 막 그랬잖아 그래가지고 멤버를 좀 바…</comment>
+      <in>27988</in>
+      <out>27988</out>
+    </marker>
+    <marker>
+      <name>광고9 [검증전환] [00:15:42:28]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.58); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.72) | 텍스트유사도 0.584 | …2, 2, 3, 4 삼촌을 잃어  ▶  우리가 왔다…</comment>
+      <in>28288</in>
+      <out>28288</out>
+    </marker>
+    <marker>
+      <name>광고10 [검증전환] [00:15:52:03]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.32); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.74) | 텍스트유사도 0.321 | …지고 나서 울지 나마나 뭘 박수쳐 아버지  ▶  거래장머리 없는 얘기 했는데 아무튼 저희 한번 최선을 다해서 한번 해보도록 하겠습…</comment>
+      <in>28563</in>
+      <out>28563</out>
+    </marker>
+  </sequence>
+</xmeml>

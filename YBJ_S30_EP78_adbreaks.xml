@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xmeml SYSTEM "http://www.apple.com/DTDs/xmeml-1.0.dtd">
+<xmeml version="5">
+  <sequence id="sequence-1">
+    <name>YBJ_S30_EP78_AdBreakCandidates</name>
+    <duration>48248</duration>
+    <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+    <timecode>
+      <string>00:00:00:00</string>
+      <frame>0</frame>
+      <displayformat>NDF</displayformat>
+      <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+    </timecode>
+    <media>
+      <video>
+        <format>
+          <samplecharacteristics>
+            <width>1920</width>
+            <height>1080</height>
+            <rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+          </samplecharacteristics>
+        </format>
+        <track></track>
+      </video>
+    </media>
+    <marker>
+      <name>광고1 [검증전환] [00:05:31:28]</name>
+      <comment>점수 9.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.44); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s) · CLIP 검수 통과(유사도 0.57) | 텍스트유사도 0.436 | …기억속에는 없어요  ▶  공부할 때가 좋았다라는 생각이 들기 시작한 공부연생이 데뷔했다고 아이돌나이드 꼭 …</comment>
+      <in>9958</in>
+      <out>9958</out>
+    </marker>
+    <marker>
+      <name>광고2 [검증전환] [00:05:31:00]</name>
+      <comment>점수 6.0 | 문장 끝 직후 0.8초 침묵; 장면 컷에서 시작(0.94s); 긴 침묵(0.8초); 최우선 :00 프레임 · CLIP 배치 통과(유사도 0.57) | …기억속에는 없어요  ▶  공부할 때가 좋았다라는 생각이 들기 시작한 공부연생이 데뷔했다고 아이돌나이드 꼭 …</comment>
+      <in>9930</in>
+      <out>9930</out>
+    </marker>
+    <marker>
+      <name>광고3 [검증전환] [00:21:32:01]</name>
+      <comment>점수 6.0 | 장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인 · 주제 전환(0.52); 문장 끝 직후 0.0초 침묵; 장면 컷에서 시작(0.00s); CTA/홍보 키워드 인접 · CLIP 검수 통과(유사도 0.51) | 텍스트유사도 0.524 | …그리고 여러분들께만 비밀 말씀드리자면은 빨간까지 올리는 게 어른들의 조건이었습니다  ▶  마고추 vs 09년생이 데뷔했다고 아이돈을 나이들 콧바로 치기 나 이거 솔직히 나…</comment>
+      <in>38761</in>
+      <out>38761</out>
+    </marker>
+  </sequence>
+</xmeml>

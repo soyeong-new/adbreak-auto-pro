@@ -490,7 +490,8 @@ def pick_primary(markers, duration, settings=None):
         if lo > last:
             break
         avail = [m for m in ms if m["time"] <= last and m["time"] not in used
-                 and (prev is None or m["time"] > prev)]
+                 and (prev is None or m["time"] > prev)
+                 and m["has_cut"]]  # 1차: 장면 전환 확인된 마커만
         if not avail:
             break
         in_range = [m for m in avail if lo <= m["time"] <= hi]
