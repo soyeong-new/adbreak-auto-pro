@@ -48,7 +48,7 @@ def _verify(video_path, markers, progress=None):
                 m["reason"] += f" · CLIP 검수 통과(유사도 {sim:.2f})"
         else:
             m["has_cut"] = False
-            m["score"] = round(m["score"] - W_SCENE, 2)
+            m["score"] = round(m["score"] - W_SCENE, 2)  # W_SCENE(5.0) 환수 → 총 패널티 -5.0
             sim_txt = f" 유사도 {sim:.2f}" if sim is not None else ""
             m["reason"] = f"[장면 전환 아님 — CLIP{sim_txt}] " + m["reason"]
         kept.append(m)

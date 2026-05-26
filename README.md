@@ -72,12 +72,13 @@
 
 | 요소 | 가중치 | 설명 |
 |---|---|---|
+| 장면 전환 (CLIP 확인) | +5.0 | 진짜 화면 전환 |
+| 주제 전환 (텍스트 유사도 < 0.75) | +4.0 | 전후 내용이 달라짐 |
 | 강한 화제 전환 표현 | +3.0 | 다음 문장이 "자 이제 / 다음으로 / 마지막으로 / 정리하자면…"으로 시작 |
 | 마무리 표현 | +2.0 | 앞 문장이 "겠습니다 / 이상입니다 / 마치겠습니다…"로 종료 |
-| 장면 전환 (CLIP 확인) | +2.5 | 진짜 화면 전환 |
-| 주제 전환 (텍스트 유사도 < 0.75) | +2.0 | 전후 내용이 달라짐 |
 | :00 프레임 | +1.0 | 최우선 허용 프레임 위치 |
 | 약한 전환 표현 | +1.0 | 다음 문장이 "자 / 이제 / 그러면…"으로 시작 |
+| CLIP 재검증 실패 | −5.0 | 장면 전환 아님으로 판정 시 W_SCENE(+5.0) 환수 → 총 패널티 −5.0 |
 | CTA 키워드 | −3.0 | 구독/좋아요/알림 등 홍보성 발화 |
 | 연속 표현 | −2.0 | "근데/사실/그리고" 등 말이 이어지는 표현 |
 | 짧은 선행 문장 | −1.5 | 앞 문장이 너무 짧음 (말 조각 가능성) |
@@ -150,15 +151,34 @@ python3.9 -m venv .venv
 ```bash
 cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 ../.venv/bin/python app.py
-# → http://localhost:8000 브라우저에서 열기
-# (8000이 사용 중이면 8001~8009 순으로 자동 시도)
 ```
 
-> 또는 vscode 루트에서 환경 활성화 후 실행해도 됩니다.
-> ```bash
-> source /Users/choisoyeong/Desktop/vscode/.venv/bin/activate
-> cd adbreak_auto_pro && python app.py
-> ```
+브라우저에서 열기 → **http://localhost:8000**  
+(8000이 사용 중이면 8001~8009 순으로 자동 시도)
+
+---
+
+### 구글 드라이브 자동 감시 (팀 공유)
+
+팀원이 구글 드라이브 폴더에 영상을 올리면 자동으로 분석하고 XML을 같은 폴더에 저장합니다.
+
+**공유 폴더**: https://drive.google.com/drive/u/0/folders/1CjkqNk8ZJUsCZ7zDlfBHZMsth3BvcDEB  
+**로컬 동기화 경로**: `/Users/choisoyeong/Library/CloudStorage/GoogleDrive-so-yeong@its-newid.com/내 드라이브/AD Break`
+
+**실행 방법 1 — 더블클릭**  
+`start_watcher.command` 파일을 더블클릭하면 터미널이 열리면서 자동 실행됩니다.
+
+**실행 방법 2 — 터미널 직접 입력**
+
+```bash
+cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
+../.venv/bin/python watcher.py "/Users/choisoyeong/Library/CloudStorage/GoogleDrive-so-yeong@its-newid.com/내 드라이브/AD Break"
+```
+
+> 컴퓨터가 켜져 있고 watcher가 실행 중인 동안만 자동 처리됩니다.  
+> 팀원은 구글 드라이브 링크에서 영상 업로드만 하면 되고, 별도 설치 불필요합니다.
+
+---
 
 ### API 직접 호출
 

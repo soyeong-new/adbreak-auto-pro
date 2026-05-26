@@ -1,2 +1,8 @@
 /.env
 /.env.*
+../.venv/
+.cache/
+eval/output/
+__pycache__/
+*.pyc
+
