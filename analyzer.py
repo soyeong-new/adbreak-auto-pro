@@ -116,12 +116,19 @@ def run_analysis(video_path, settings=None, progress=None):
     markers = _verify(video_path, markers, progress)
 
     # 1st pass: ad slots (each = recommendation + alternatives in its window).
-    # 2nd pass: every marker, no distance/count limit.
+    # 2nd pass: CLIP-confirmed cut-anchor markers only, no gap_min/spacing limit.
+    #   These are positions where a genuine scene cut (CLIP similarity < SAME_THRESHOLD)
+    #   coincides with a sentence boundary — the raw material the editor reviews
+    #   to make the final ad break decision.
     primary_slots = pick_primary(markers, duration, settings)
     primary_flat = [m for slot in primary_slots for m in slot]
     prim_times = {m["time"] for m in primary_flat}
     for m in markers:
         m["primary"] = m["time"] in prim_times
+
+    # 2nd pass: cut-anchor only (Path 2) — CLIP-verified scene cut + sentence boundary.
+    # Sorted by time, no spacing constraint.
+    cut_anchor_markers = [m for m in markers if m.get("cut_anchor")]
 
     return {
         "video_path": video_path,
@@ -138,5 +145,5 @@ def run_analysis(video_path, settings=None, progress=None):
         "primary_slots": primary_slots,
         "markers": markers,
         "xml_primary": build_candidate_xml(primary_flat, video_path, duration),
-        "xml_all": build_candidate_xml(markers, video_path, duration),
+        "xml_all": build_candidate_xml(cut_anchor_markers, video_path, duration),
     }

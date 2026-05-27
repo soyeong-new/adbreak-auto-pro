@@ -64,8 +64,8 @@ CLOSERS = [
 W_STRONG_OPENER = 3.0
 W_WEAK_OPENER = 1.0
 W_CLOSER = 2.0
-W_SCENE = 5.0
-P_CLIP_FAIL = 5.0  # CLIP 재검증 실패 시 패널티 (장면전환 아님으로 판정)
+W_SCENE = 8.0
+P_CLIP_FAIL = 8.0  # CLIP 재검증 실패 시 패널티 (장면전환 아님으로 판정)
 SCENE_RADIUS = 0.3
 # 2026-05-24: CLIP-확인된 컷에 대해 SCENE_RADIUS를 넓혀 silence 기반 후보를 has_cut=True로
 # 업그레이드. 새 후보를 생성하는 게 아니라 기존 후보의 has_cut 상태만 교정.
@@ -176,16 +176,13 @@ def _allowed_frame_in(s0, s1):
 
 
 def _nearest_allowed_frame(t):
-    """장면 컷 시간 t에서 가장 가까운 허용 프레임(:00/:01/:02/:03/:28/:29)을 반환.
+    """장면 컷 시간 t가 허용 프레임(:00/:01/:02/:03/:28/:29)에 정확히 해당할 때만 반환.
 
-    컷 위치에서 바깥쪽으로 탐색해 FF_ALLOWED에 해당하는 첫 프레임을 돌려줌.
-    최대 ±1초(~30프레임) 범위를 탐색; 없으면 None.
+    컷이 허용 프레임이 아니면 None 반환 → 마커 생성 안 함. 스냅 없음.
     """
     f_center = int(round(t * FPS))
-    for delta in range(0, 31):
-        for f in (f_center + delta, f_center - delta):
-            if f >= 0 and f % 30 in FF_ALLOWED:
-                return f
+    if f_center % 30 in FF_ALLOWED:
+        return f_center
     return None
 
 
@@ -377,17 +374,21 @@ def select_ad_breaks_local(segments, duration, settings=None,
             if any(abs(cut_t - t) <= SCENE_RADIUS for t in covered):
                 continue
 
-            # 조건 2: 컷이 두 문장 사이의 간격에 떨어지는지 확인.
-            # sentences[k]["end"] <= cut_t <= sentences[k+1]["start"] 인 k가 있어야 함.
-            # 단, Whisper 타임스탬프 오차를 감안해 ±CUT_BOUNDARY_WINDOW(0.5s) 여유를 줌.
-            # "경계가 근처에 있다"가 아니라 "컷이 문장 간 간격에 속한다"는 엄격한 조건.
+            # 조건 2: 컷이 발화 갭에 떨어지는지 확인.
+            # build_sentences는 문법 기반 병합이라 Whisper 원본 갭이 묻힐 수 있음.
+            # 따라서 (A) 합쳐진 sentences 기준 갭, (B) 원본 segments 기준 갭 둘 다 확인.
+            # 하나라도 해당하면 허용. 단, ±CUT_BOUNDARY_WINDOW(0.5s) 여유를 줌.
             in_gap = any(
                 sentences[k]["end"] - CUT_BOUNDARY_WINDOW <= cut_t <=
                 sentences[k + 1]["start"] + CUT_BOUNDARY_WINDOW
                 for k in range(len(sentences) - 1)
+            ) or any(
+                segments[k]["end"] - CUT_BOUNDARY_WINDOW <= cut_t <=
+                segments[k + 1]["start"] + CUT_BOUNDARY_WINDOW
+                for k in range(len(segments) - 1)
             )
             if not in_gap:
-                continue  # 컷이 문장 중간에 있음 → 건너뜀
+                continue  # 컷이 문장/세그먼트 중간에 있음 → 건너뜀
 
             # 마커를 컷 시간에서 가장 가까운 허용 프레임(:00/:01/:02/:03/:28/:29)에 배치.
             frame = _nearest_allowed_frame(cut_t)
@@ -490,8 +491,7 @@ def pick_primary(markers, duration, settings=None):
         if lo > last:
             break
         avail = [m for m in ms if m["time"] <= last and m["time"] not in used
-                 and (prev is None or m["time"] > prev)
-                 and m["has_cut"]]  # 1차: 장면 전환 확인된 마커만
+                 and (prev is None or m["time"] > prev)]  # 침묵+문장 경계 전체 포함
         if not avail:
             break
         in_range = [m for m in avail if lo <= m["time"] <= hi]

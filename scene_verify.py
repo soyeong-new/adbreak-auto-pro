@@ -21,8 +21,8 @@ _preprocess = None
 
 # CLIP image-image cosine similarity. Above SAME_THRESHOLD => same scene
 # (jump cut / framing change / graphic overlay); below => a real scene transition.
-# 0.60: 앵글 변화·그래픽 오탐을 강하게 걸러냄. 진짜 장소 전환(0.3~0.55)만 통과.
-SAME_THRESHOLD = 0.60
+# 0.80: 스튜디오 고정 카메라 환경에서 앵글 변화(0.73~0.79)도 실제 전환으로 인식.
+SAME_THRESHOLD = 0.80
 
 
 def _load():

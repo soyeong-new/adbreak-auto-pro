@@ -119,17 +119,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 report = run_analysis(video, settings or None,
                                       progress=lambda m: print(f"  · {m}", flush=True))
                 stem = os.path.splitext(report["video_name"])[0]
-                out = {
-                    "_adbreaks.xml": report["xml_primary"],
-                    "_adbreaks_all.xml": report["xml_all"],
-                }
-                for suffix, content in out.items():
-                    with open(os.path.join(os.getcwd(), stem + suffix), "w",
-                              encoding="utf-8") as f:
-                        f.write(content)
-                report["xml_path"] = os.path.join(os.getcwd(), stem + "_adbreaks.xml")
                 print(f"[{idx}/{len(videos)} 완료] 1차 {report['primary_count']}구간 / "
-                      f"전체 {report['marker_count']}개 · {stem}_adbreaks.(xml/jsx)",
+                      f"전체 {report['marker_count']}개",
                       flush=True)
                 results.append(report)
             except Exception as e:

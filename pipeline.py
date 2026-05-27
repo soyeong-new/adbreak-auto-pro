@@ -123,7 +123,7 @@ def detect_scenes(video_path, progress=None):
     if progress:
         progress("장면 전환 감지 중...")
     from scenedetect import detect, ContentDetector
-    scene_list = detect(video_path, ContentDetector())
+    scene_list = detect(video_path, ContentDetector(threshold=27))
     cuts = [round(start.get_seconds(), 3)
             for i, (start, _end) in enumerate(scene_list) if i > 0]
     _save_cache(video_path, "scenes", {"scenes": cuts})
