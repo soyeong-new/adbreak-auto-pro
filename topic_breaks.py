@@ -1,10 +1,13 @@
-"""Ad break selection.
+"""Whisper 세그먼트 → 문장 단위 병합 (topic_breaks.py)
 
-The ad break must land right after a *completed sentence* -- never mid-sentence.
-Whisper segments are merged into whole sentences, and an OpenAI model picks which
-sentence-ends are the ad break points, constrained by the structural spacing rules.
+Whisper는 짧은 세그먼트 단위로 전사하는데, 마커 생성에는 완성된 문장 단위가 필요합니다.
+한국어 종결어미(~다/~요/~까/~죠 등)를 기준으로 세그먼트를 합쳐 문장을 만듭니다.
 
-Used both by the evaluation harness and the production analyzer.
+  build_sentences()       — 세그먼트 리스트 → 문장 리스트 [{start, end, text}]
+  build_transcript_text() — 문장 리스트 → [HH:MM:SS] 형식 텍스트 (디버그용)
+
+문법 기반 병합이라 Whisper 원본의 타임스탬프 갭과 무관하게 동작합니다.
+Path 2 컷 앵커 경로에서 in_gap 체크 시 원본 세그먼트도 병행 확인하는 이유입니다.
 """
 import json
 

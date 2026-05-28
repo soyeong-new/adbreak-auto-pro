@@ -1,8 +1,11 @@
-"""Shared lexical patterns for ad break analysis.
+"""한국어 발화 패턴 감지 (patterns.py)
 
-Centralized so production code (local_breaks.py) and the self-consistency
-check (eval/self_check.py) speak the same vocabulary. Adding a phrase here
-affects both detection and reporting at once.
+마커 점수 계산에 쓰이는 어휘 패턴을 중앙 관리합니다.
+
+  has_cta()                  — 구독/좋아요/알림/스폰서 등 홍보성 키워드 포함 여부
+  starts_with_continuation() — "근데/사실/그리고/아/음" 등 발화 지속 표현 시작 여부
+
+여기서 패턴을 수정하면 local_breaks.py 점수 계산에 즉시 반영됩니다.
 """
 
 # Continuation openers — the speaker keeps talking past a "completed" sentence.

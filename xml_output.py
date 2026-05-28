@@ -1,7 +1,12 @@
-"""Build a Final Cut Pro 7 XML (xmeml v5) that Premiere Pro imports as a
-sequence with timeline markers -- one marker per ad break candidate.
+"""Premiere Pro 임포트용 마커 XML 생성 (xml_output.py)
 
-The user reviews all candidate markers in Premiere and keeps the ones they want.
+FCP7 xmeml v5 형식의 XML을 생성합니다. Premiere Pro에서 파일 → 가져오기로 불러오면
+타임라인에 마커가 표시됩니다.
+
+마커 이름 형식: 광고N [검증전환|참고] [HH:MM:SS:FF]
+마커 코멘트:   점수 | 판단 근거 | 텍스트유사도(Path 2만) | 앞뒤 발화 45자
+
+  build_candidate_xml() — 마커 리스트 → XML 문자열 반환 (파일 저장은 app.py에서 담당)
 """
 import os
 from framecode import seconds_to_frame

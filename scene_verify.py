@@ -1,14 +1,16 @@
-"""Semantic scene-cut verification with CLIP.
+"""CLIP 기반 장면 전환 검증 (scene_verify.py)
 
-A pixel-difference detector (PySceneDetect) cannot tell a real scene transition
-from a jump cut or a framing change within the same setup. CLIP encodes what an
-image *is* (a classroom, two people at a desk...), so a wide shot and a close-up
-of the same setup get similar embeddings while a genuinely new scene does not.
+PySceneDetect는 픽셀 차이만 보기 때문에 같은 공간 안에서의 앵글 변화·자막 오버레이·
+점프컷도 장면 전환으로 잘못 감지합니다. CLIP은 이미지의 의미(장소·인물·상황)를
+임베딩하므로 같은 공간의 다른 앵글은 유사하게, 진짜 새 장면은 다르게 판단합니다.
 
-Two modes:
-  is_real_scene_change()      — single-cut check (used in _verify for marker confirmation)
-  batch_scene_similarities()  — all cuts at once (used in analyzer to find real transitions
-                                 before candidate generation so cut-anchor path works)
+  SAME_THRESHOLD = 0.80
+    코사인 유사도 < 0.80 → 진짜 장면 전환
+    코사인 유사도 ≥ 0.80 → 동일 장면 내 변화 (노이즈)
+
+두 가지 모드:
+  is_real_scene_change()     — 단건 검증 (Path 1 마커 개별 재확인)
+  batch_scene_similarities() — 전체 컷 배치 검증 (분석 초반에 한 번에 처리, 캐싱)
 """
 import json
 import os

@@ -51,6 +51,24 @@
   .reason { font-size:12px; color:var(--muted); margin-top:5px; }
   a.dl { color:var(--accent); font-size:13px; }
   .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+  /* 장르 카드 */
+  .genre-section { margin-top:18px; }
+  .genre-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:10px 0 0; }
+  .genre-card { border:2px solid var(--line); border-radius:10px; padding:12px 10px; cursor:pointer;
+                text-align:center; transition:border-color .15s, background .15s; user-select:none; }
+  .genre-card:hover { border-color:var(--accent); }
+  .genre-card.active { border-color:var(--accent); background:rgba(91,140,255,.12); }
+  .genre-icon { font-size:24px; margin-bottom:5px; }
+  .genre-name { font-size:13px; font-weight:700; color:var(--text); }
+  .genre-desc { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  /* 가중치 슬라이더 */
+  .weight-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+  .weight-item label { font-size:12px; color:var(--muted); margin-bottom:3px; display:block; }
+  .weight-desc { font-size:11px; color:var(--muted); line-height:1.4; margin-bottom:7px; }
+  .slider-row { display:flex; align-items:center; gap:10px; }
+  .slider-row input[type=range] { flex:1; accent-color:var(--accent); cursor:pointer; }
+  .slider-val { min-width:34px; text-align:right; font-size:13px; font-weight:700; color:var(--accent); }
+  .sil-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -71,6 +89,65 @@
       <div><label>첫 광고 최대</label><input id="fmax" type="number" value="10"></div>
       <div><label>간격 최소</label><input id="gmin" type="number" value="10"></div>
       <div><label>간격 최대</label><input id="gmax" type="number" value="15"></div>
+    </div>
+    <div class="genre-section">
+      <label>영상 장르 — 장르를 고르면 가중치가 자동으로 맞춰집니다 (슬라이더로 세부 조정 가능)</label>
+      <div class="genre-grid">
+        <div class="genre-card" data-genre="movie" onclick="selectGenre('movie')">
+          <div class="genre-icon">🎬</div>
+          <div class="genre-name">영화</div>
+          <div class="genre-desc">극영화 · 다큐 · 컷 중심 편집</div>
+        </div>
+        <div class="genre-card" data-genre="music" onclick="selectGenre('music')">
+          <div class="genre-icon">🎵</div>
+          <div class="genre-name">노래</div>
+          <div class="genre-desc">뮤직비디오 · 공연 · 라이브</div>
+        </div>
+        <div class="genre-card active" data-genre="talk" onclick="selectGenre('talk')">
+          <div class="genre-icon">🎙</div>
+          <div class="genre-name">유튜브 토크·예능</div>
+          <div class="genre-desc">퀴즈쇼 · 예능 · 토크쇼</div>
+        </div>
+        <div class="genre-card" data-genre="lecture" onclick="selectGenre('lecture')">
+          <div class="genre-icon">📚</div>
+          <div class="genre-name">유튜브 강의·정보</div>
+          <div class="genre-desc">교육 · 설명 · 정보 채널</div>
+        </div>
+      </div>
+      <div class="weight-grid">
+        <div class="weight-item">
+          <label>장면 전환 점수</label>
+          <div class="weight-desc">화면이 바뀌는 컷에 주는 보너스. 높을수록 장면 컷 위치를 우선합니다.</div>
+          <div class="slider-row">
+            <input id="w_scene" type="range" min="0" max="10" step="0.5" value="6" oninput="sv('w_scene_v',this.value)">
+            <span id="w_scene_v" class="slider-val">6</span>
+          </div>
+        </div>
+        <div class="weight-item">
+          <label>주제 전환 점수</label>
+          <div class="weight-desc">말 내용이 크게 달라지는 지점에 추가 점수. 토크·강의에 효과적입니다.</div>
+          <div class="slider-row">
+            <input id="w_topic" type="range" min="0" max="10" step="0.5" value="4" oninput="sv('w_topic_v',this.value)">
+            <span id="w_topic_v" class="slider-val">4</span>
+          </div>
+        </div>
+        <div class="weight-item">
+          <label>침묵 최소 길이</label>
+          <div class="weight-desc">이 길이 이상의 침묵만 마커 후보로 인식합니다. 낮을수록 짧은 침묵도 잡습니다 (3 = 0.3초 민감, 7 = 0.7초 엄격).</div>
+          <div class="slider-row">
+            <input id="sil_min" type="range" min="2" max="10" step="1" value="3" oninput="sv('sil_min_v',(this.value/10).toFixed(1)+'초')">
+            <span id="sil_min_v" class="slider-val">0.3초</span>
+          </div>
+        </div>
+        <div class="weight-item">
+          <label>CTA 패널티</label>
+          <div class="weight-desc">'구독/좋아요/스폰서' 등 홍보 표현 근처를 피하는 강도. 높을수록 강하게 회피합니다.</div>
+          <div class="slider-row">
+            <input id="p_cta" type="range" min="0" max="8" step="0.5" value="3" oninput="sv('p_cta_v',this.value)">
+            <span id="p_cta_v" class="slider-val">3</span>
+          </div>
+        </div>
+      </div>
     </div>
     <button id="go">분석 시작</button>
     <div class="hint">1차 = 위 규칙대로 간격 분배한 마커 / 2차 = 같은 조건의 모든 마커(거리·개수 제한 없음). 둘 다 한 번에 계산됩니다.</div>
@@ -102,6 +179,10 @@ async function analyze(){
         settings: {
           first_min: parseFloat($('fmin').value), first_max: parseFloat($('fmax').value),
           gap_min: parseFloat($('gmin').value), gap_max: parseFloat($('gmax').value),
+          w_scene: parseFloat($('w_scene').value),
+          w_topic_change: parseFloat($('w_topic').value),
+          silence_min: parseInt($('sil_min').value) / 10,
+          p_cta: parseFloat($('p_cta').value),
         }
       })
     });
@@ -229,6 +310,24 @@ function toggleAll(ri){
   m2.style.display = showAll?'':'none';
   tg.textContent = showAll ? '1차만 보기' : ('2차 — 전체 보기');
 }
+
+// 장르 프리셋
+const GENRE_PRESETS = {
+  movie:   {w_scene:8, w_topic:2, sil:5, p_cta:3},
+  music:   {w_scene:7, w_topic:0, sil:5, p_cta:1},
+  talk:    {w_scene:6, w_topic:4, sil:3, p_cta:3},
+  lecture: {w_scene:3, w_topic:8, sil:3, p_cta:5},
+};
+function selectGenre(g){
+  document.querySelectorAll('.genre-card').forEach(c=>c.classList.remove('active'));
+  document.querySelector('[data-genre="'+g+'"]').classList.add('active');
+  const p = GENRE_PRESETS[g];
+  $('w_scene').value  = p.w_scene;  $('w_scene_v').textContent  = p.w_scene;
+  $('w_topic').value  = p.w_topic;  $('w_topic_v').textContent  = p.w_topic;
+  $('sil_min').value  = p.sil;      $('sil_min_v').textContent  = (p.sil/10).toFixed(1)+'초';
+  $('p_cta').value    = p.p_cta;    $('p_cta_v').textContent    = p.p_cta;
+}
+function sv(id, val){ $(id).textContent = val; }
 
 $('go').addEventListener('click', analyze);
 

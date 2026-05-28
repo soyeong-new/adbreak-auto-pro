@@ -1,8 +1,15 @@
-"""Per-video signal extraction with caching.
+"""영상 신호 추출 및 캐싱 (pipeline.py)
 
-Transcription, scene detection and voice-envelope extraction are expensive, so
-each result is cached under .cache/ keyed by the video file. Re-analyzing the
-same video is then instant.
+전사·장면 탐지·음성 음량 추출은 시간이 오래 걸리므로 결과를 .cache/에 저장합니다.
+같은 영상을 다시 분석할 때는 캐시를 즉시 반환합니다.
+
+  transcribe()              — Whisper 음성 전사 (mlx-whisper / faster-whisper 폴백)
+  detect_scenes()           — PySceneDetect 장면 전환 탐지 (ContentDetector threshold=27)
+  extract_voice_envelope()  — ffmpeg으로 250~3000Hz 음량 곡선 추출 (침묵 판별용)
+  get_duration()            — ffprobe로 영상 길이(초) 반환
+  get_fps()                 — ffprobe로 영상 프레임레이트 반환
+
+캐시 키: {영상명}_{파일크기} — 파일이 교체되면 자동으로 재분석.
 """
 import os
 import re

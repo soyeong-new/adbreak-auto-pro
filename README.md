@@ -137,15 +137,24 @@ vscode/
 
 ## 설치
 
-Python 3.9, Apple Silicon Mac. 의존성은 `vscode/.venv`에 설치돼 있습니다.
+Python 3.11, Apple Silicon Mac. 의존성은 `vscode/.venv`에 설치돼 있습니다.
 
 새로운 환경에서 설치할 경우:
 
 ```bash
 cd /Users/choisoyeong/Desktop/vscode
-python3.9 -m venv .venv
-.venv/bin/pip install mlx-whisper open-clip-torch scenedetect sentence-transformers \
-                      opencv-python numpy Pillow faster-whisper
+python3.11 -m venv .venv
+.venv/bin/pip install \
+  mlx-whisper==0.4.3 \
+  open-clip-torch==3.3.0 \
+  scenedetect==0.7 \
+  sentence-transformers==5.5.1 \
+  opencv-python==4.13.0.92 \
+  numpy==2.4.6 \
+  Pillow==12.2.0 \
+  faster-whisper==1.2.1 \
+  torch==2.12.0 \
+  torchvision==0.27.0
 ```
 
 처음 실행 시 CLIP 모델(ViT-B-32-quickgelu, ~350MB)과 ko-sroberta 모델(~400MB)이 자동 다운로드됩니다.  
@@ -290,13 +299,14 @@ GT 매칭 기준: 마커 시각이 정답 타임코드와 **5초 이내**이면 
 
 ## 주요 기술 스택
 
-| 역할 | 기술 |
-|---|---|
-| 음성 전사 | mlx-whisper (Apple Silicon) / faster-whisper (폴백) |
-| 장면 전환 탐지 | PySceneDetect 0.6.x (ContentDetector, threshold=27) |
-| 장면 전환 검증 | open-clip ViT-B-32-quickgelu (SAME_THRESHOLD=0.80) |
-| 한국어 텍스트 유사도 | jhgan/ko-sroberta-multitask |
-| 문장 분리 | 자체 한국어 종결어미 판별기 (topic_breaks.py) |
-| 영상 처리 | FFmpeg / ffprobe |
-| 프레임 기준 | 29.97 fps Non-Drop-Frame (NDF) |
-| 웹 서버 | Python http.server |
+| 역할 | 기술 | 버전 |
+|---|---|---|
+| 음성 전사 | mlx-whisper (Apple Silicon) / faster-whisper (폴백) | 0.4.3 / 1.2.1 |
+| 장면 전환 탐지 | PySceneDetect ContentDetector (threshold=27) | 0.7 |
+| 장면 전환 검증 | open-clip ViT-B-32-quickgelu (SAME_THRESHOLD=0.80) | 3.3.0 |
+| 한국어 텍스트 유사도 | jhgan/ko-sroberta-multitask | sentence-transformers 5.5.1 |
+| 딥러닝 프레임워크 | PyTorch | 2.12.0 |
+| 문장 분리 | 자체 한국어 종결어미 판별기 (topic_breaks.py) | — |
+| 영상 처리 | FFmpeg / ffprobe | brew 최신 |
+| 프레임 기준 | 29.97 fps Non-Drop-Frame (NDF) | — |
+| 웹 서버 | Python http.server | Python 3.11 |

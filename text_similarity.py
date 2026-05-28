@@ -1,15 +1,16 @@
-"""Korean text semantic similarity for topic-change detection.
+"""한국어 텍스트 의미 유사도 — 주제 전환 감지 (text_similarity.py)
 
-For each CLIP-confirmed scene cut, computes the cosine similarity between
-the transcript content *before* and *after* the cut using a local Korean
-sentence-transformer model (jhgan/ko-sroberta-multitask).
+컷 전후 발화를 로컬 한국어 임베딩 모델(jhgan/ko-sroberta-multitask)로 벡터화해
+코사인 유사도를 계산합니다. 결과는 Path 2 마커의 주제 전환 점수에 사용됩니다.
 
-Low similarity  → the topic changed at this cut  → ad break candidate
-High similarity → same topic continues           → skip
+  유사도 < 0.75 → 주제 전환 → +4.0점 (W_TOPIC_CHANGE)
+  유사도 ≥ 0.75 → 주제 유지 → 점수 변화 없음
 
-Two entry points:
-  compute_text_similarity()      — single cut (used in testing)
-  batch_text_similarities()      — all cuts at once with per-video cache
+주요 함수:
+  compute_text_similarity()  — 단건 계산 (테스트용)
+  batch_text_similarities()  — 전체 컷 배치 계산 + 캐싱 ({영상명}.text_sim.json)
+
+컷 전후 각 30초(TEXT_WINDOW) 구간의 발화를 사용합니다.
 """
 
 import json

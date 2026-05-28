@@ -1,10 +1,13 @@
-"""29.97 fps Non-Drop-Frame timecode helpers.
+"""타임코드 및 프레임 변환 유틸리티 (framecode.py)
 
-A marker may only sit on an allowed frame -- last digit (FF) in
-{00,01,02,03,28,29}. :00 is top priority; :01-03/:28-29 are candidate-tier.
-Any other frame (:04-:27) cannot hold a marker. Markers are never moved/snapped
-onto an allowed frame -- a candidate simply qualifies only if the event already
-lands on one.
+29.97fps Non-Drop-Frame 기준으로 프레임 번호 ↔ 초(seconds) ↔ HH:MM:SS:FF 변환을 담당합니다.
+
+허용 프레임 규칙:
+  - :00        → FF_TOP (최우선)
+  - :01~:03, :28~:29 → FF_CANDIDATE (허용)
+  - :04~:27    → 마커 배치 불가
+
+스냅(근접 프레임으로 이동) 없음 — 이벤트가 정확히 허용 프레임에 해당할 때만 마커 생성.
 """
 FPS = 30000.0 / 1001.0   # 29.97002997...
 FF_TOP = {0}

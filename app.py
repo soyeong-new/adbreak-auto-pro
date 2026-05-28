@@ -1,8 +1,14 @@
-"""Local web server for the ad break marker tool.
+"""로컬 웹 서버 (app.py)
 
-Serves index.html and exposes /api/analyze, which runs the full pipeline on a
-video file and returns ranked ad break candidates plus a Premiere-importable
-marker XML.
+브라우저 UI를 서빙하고 분석 API를 제공합니다.
+
+  - GET  /          → index.html 반환
+  - POST /api/analyze → 영상 분석 실행, 결과(마커 목록 + XML 문자열)를 JSON으로 반환
+
+분석이 완료돼도 XML 파일을 자동으로 저장하지 않습니다.
+UI에서 다운로드 버튼을 눌러야 로컬에 저장됩니다.
+
+실행: ../.venv/bin/python app.py  (포트 8000, 사용 중이면 8001~8009 순으로 시도)
 """
 import http.server
 import socketserver
@@ -74,6 +80,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             val = data.get("settings", {}).get(key)
             if val is not None:
                 settings[key] = float(val) * 60.0
+
+        # 장르 가중치 — 분 변환 없이 그대로 사용
+        for key in ("w_scene", "w_topic_change", "p_cta"):
+            val = data.get("settings", {}).get(key)
+            if val is not None:
+                settings[key] = float(val)
+        val = data.get("settings", {}).get("silence_min")
+        if val is not None:
+            settings["silence_min"] = float(val)
 
         # A path may be an absolute file/folder, or a bare filename dragged in;
         # bare filenames are resolved by searching the base folder ('root').

@@ -1,26 +1,22 @@
-"""Local (no-API) ad break detection.
+"""마커 후보 생성 및 점수 계산 핵심 로직 (local_breaks.py)
 
-A sentence boundary becomes a marker only when a real silence follows the
-completed sentence -- the voice-band loudness must drop most of the way (a
-SILENCE_K fraction) from the local speech level toward the video's own noise
-floor and stay there for SILENCE_MIN s. The threshold is adaptive: a video
-with a narrow dynamic range is judged on the same relative scale as a wide
-one. This is what keeps a marker off mid-sentence speech: a sentence-final
-ending (~다/~요/~까…) alone is
-not enough, because in speech people tack words on after the verb; the speaker
-must actually pause. The marker is then placed on an allowed 29.97 NDF frame
-(:00 first, else :01-03/:28-29) *inside* that silence.
+두 가지 경로로 마커 후보를 생성합니다.
 
-Markers come in two kinds:
+  Path 1 — 침묵 기반
+    문장 종결 직후 적응형 침묵(≥0.5s)이 확인되고, 침묵 안에 허용 프레임이 있는 경우.
+    CLIP 확인 컷이 ±0.3s(또는 ±1.0s) 이내면 has_cut=True로 업그레이드.
 
-  transition : the silence coincides with a scene cut, and CLIP (analyzer.py)
-               confirms a real scene transition. The strong ad break spot.
-  reference  : sentence end + real silence but no scene cut. A fallback for
-               formats with no visual scene transitions (single-room videos).
+  Path 2 — 컷 앵커
+    CLIP 유사도 < 0.80인 실제 화면 전환이 허용 프레임에 정확히 착지하고,
+    Whisper 문장/세그먼트 갭이 ±0.5s 이내에 있는 경우. 침묵 불필요.
 
-Two views of the same markers:
-  1st pass : a spaced subset -- first ad 3-10 min, then one every 10-15 min.
-  2nd pass : every marker, with no distance/count limit.
+출력 두 가지:
+  1차 (_adbreaks.xml)    : 간격 규칙 적용(첫 광고 3~10분, 이후 10~15분). 전체 마커 대상.
+  2차 (_adbreaks_all.xml): Path 2 컷 앵커 마커만, 간격 제한 없이 전체.
+
+주요 함수:
+  select_ad_breaks_local() — 마커 후보 생성 전체
+  pick_primary()           — 1차 배치 선발
 """
 import re
 import math
@@ -186,7 +182,8 @@ def _nearest_allowed_frame(t):
     return None
 
 
-def _score(ended, nxt, frame, has_cut, cut_dist, silence_len):
+def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
+           w_scene=W_SCENE, p_cta=P_CTA):
     """Score a marker. Returns (score, reasons, has_signal, kill_reason).
 
     Every marker already sits in a verified silence after a completed sentence;
@@ -195,6 +192,9 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len):
     kill_reason: a short tag (str) when this pair matches a v1.1 exclude
     pattern, else None. The caller decides whether to drop the marker based on
     its settings — `_score` itself never drops anything.
+
+    w_scene : 장면 전환 보너스 (UI 장르 설정에 따라 override)
+    p_cta   : CTA 키워드 패널티 (UI 장르 설정에 따라 override)
     """
     score = 0.0
     reasons = [f"문장 끝 직후 {silence_len:.1f}초 침묵"]
@@ -202,7 +202,7 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len):
     kill_reason = None
 
     if has_cut:
-        score += W_SCENE
+        score += w_scene
         reasons.append(f"장면 컷에서 시작({cut_dist:.2f}s)")
 
     nxt_s = nxt.strip()
@@ -246,7 +246,7 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len):
         reasons.append("앞 문장이 질문(자문자답 중간 가능성)")
 
     if has_cta(ended) or has_cta(nxt):
-        score -= P_CTA
+        score -= p_cta
         reasons.append("CTA/홍보 키워드 인접")
         # CTA wins over continuation as the kill reason — it's a stronger
         # signal that the marker should not exist.
@@ -281,6 +281,12 @@ def select_ad_breaks_local(segments, duration, settings=None,
     lo = s["intro_deadzone"]
     hi = duration - s["outro_deadzone"]
 
+    # 장르 가중치 — UI 설정값이 있으면 우선 사용, 없으면 모듈 상수 기본값
+    _w_scene  = float(s.get("w_scene",        W_SCENE))
+    _w_topic  = float(s.get("w_topic_change", W_TOPIC_CHANGE))
+    _p_cta    = float(s.get("p_cta",          P_CTA))
+    _sil_min  = float(s.get("silence_min",    SILENCE_MIN))
+
     # the video's own noise floor -- bottom of the adaptive silence scale
     noise_floor = (_noise_floor(voice_env)
                    if voice_env and voice_env.get("db") else -70.0)
@@ -296,7 +302,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
         # A real silence must follow the completed sentence -- otherwise the
         # speech runs straight through and this is not a true sentence break.
         sil = _find_silence(voice_env, ended["end"] - SILENCE_SEARCH,
-                            nxt["start"] + SILENCE_SEARCH, noise_floor)
+                            nxt["start"] + SILENCE_SEARCH, noise_floor,
+                            min_dur=_sil_min)
         if sil is None:
             continue
         # Place the marker on an allowed frame *inside* that silence.
@@ -326,7 +333,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
         tier = frame_tier(frame)
         sc, reasons, signal, kill_reason = _score(
             ended["text"], nxt["text"], frame, has_cut, cut_dist,
-            sil[1] - sil[0])
+            sil[1] - sil[0],
+            w_scene=_w_scene, p_cta=_p_cta)
 
         # v1.1 exclusion: optional, off by default. exclude_* tells the
         # detector to drop markers whose kill_reason matches.
@@ -415,14 +423,15 @@ def select_ad_breaks_local(segments, duration, settings=None,
             # Cut-anchor: has_cut=True, cut_dist=0 (컷이 앵커), silence_len=0
             sc, reasons, signal, kill_reason = _score(
                 ended_text, nxt_text, frame,
-                has_cut=True, cut_dist=0.0, silence_len=0.0)
+                has_cut=True, cut_dist=0.0, silence_len=0.0,
+                w_scene=_w_scene, p_cta=_p_cta)
 
             # 텍스트 의미 유사도: 낮을수록 주제 전환 가능성 높음.
             text_sim = (text_sims or {}).get(cut_t)
             topic_change = False
             if text_sim is not None:
                 if text_sim < TEXT_SIM_THRESHOLD:
-                    sc += W_TOPIC_CHANGE
+                    sc += _w_topic
                     topic_change = True
 
             reason_prefix = "장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인"

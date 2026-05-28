@@ -1,8 +1,15 @@
-"""Ad break analysis pipeline.
+"""전체 분석 파이프라인 조율 (analyzer.py)
 
-Transcribe the video, detect scene cuts and the voice envelope, find every
-criteria-meeting marker, verify each with CLIP, then render Premiere-importable
-marker XMLs for both the 1st-pass (spaced subset) and 2nd-pass (all markers).
+영상 한 편에 대해 전체 분석 흐름을 순서대로 실행합니다.
+
+  1. Whisper 음성 전사 / PySceneDetect 장면 탐지 / ffmpeg 음량 곡선 추출
+  2. CLIP 배치 검증 — PySceneDetect 컷 전체를 한 번에 검사해 진짜 장면 전환 확정
+  3. 텍스트 유사도 — 컷 전후 발화를 ko-sroberta로 임베딩해 주제 전환 여부 측정
+  4. 마커 후보 생성 — 침묵 기반(Path 1) + 컷 앵커(Path 2) 두 경로로 후보 생성
+  5. CLIP 개별 재검증 — Path 1 마커 단건 확인
+  6. 1차 XML (_adbreaks.xml) / 2차 XML (_adbreaks_all.xml) 생성
+
+외부에서는 run_analysis(video_path, settings) 함수만 호출합니다.
 """
 import os
 from concurrent.futures import ThreadPoolExecutor
