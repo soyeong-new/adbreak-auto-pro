@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Break Marker — 팀 가이드</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f8fc;
+    --surface: #ffffff;
+    --surface2: #f0f2f8;
+    --border: #e2e6f0;
+    --text: #1a1d2e;
+    --text-sub: #5c6070;
+    --accent: #4f6ef7;
+    --accent-light: #eef1fe;
+    --green: #38b48b;
+    --green-light: #e8f8f3;
+    --orange: #f5a623;
+    --orange-light: #fef6e8;
+    --red: #e8445a;
+    --red-light: #fdeef1;
+    --radius: 14px;
+    --shadow: 0 2px 12px rgba(79,110,247,.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex; align-items: center; gap: 28px;
+    height: 54px;
+  }
+  nav .brand { font-weight: 800; font-size: 14px; color: var(--accent); white-space: nowrap; }
+  nav a { text-decoration: none; color: var(--text-sub); font-size: 13px; transition: color .15s; }
+  nav a:hover { color: var(--accent); }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #eef1fe 0%, #f7f8fc 55%, #e8f8f3 100%);
+    padding: 80px 40px 68px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-badge {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    padding: 4px 12px; border-radius: 20px; margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 5vw, 42px); font-weight: 800;
+    line-height: 1.2; margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p { font-size: 17px; color: var(--text-sub); max-width: 540px; margin: 0 auto 28px; }
+  .hero-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .chip {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; color: var(--text-sub);
+  }
+
+  /* LAYOUT */
+  .page { max-width: 880px; margin: 0 auto; padding: 56px 24px; }
+  .section { margin-bottom: 72px; }
+  .section-title {
+    font-size: 21px; font-weight: 800; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-sub { color: var(--text-sub); margin-bottom: 28px; font-size: 14px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* CARD */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 26px; box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 14px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .card p, .card li { font-size: 14px; color: var(--text-sub); }
+  .card ul { padding-left: 18px; }
+  .card ul li { margin-bottom: 4px; }
+  .card-bl { border-left: 4px solid var(--accent); }
+  .card-gr { border-left: 4px solid var(--green); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+  /* PIPELINE FLOW */
+  .flow {
+    display: grid;
+    grid-template-columns: 1fr 36px 1fr 36px 1fr 36px 1fr;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 32px;
+  }
+  .flow-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 16px;
+    box-shadow: var(--shadow); text-align: center;
+  }
+  .flow-ico { font-size: 28px; margin-bottom: 8px; }
+  .flow-label { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .flow-desc { font-size: 11px; color: var(--text-sub); line-height: 1.5; }
+  .flow-arrow { text-align: center; font-size: 22px; color: var(--accent); opacity: .4; }
+
+  .flow-detail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px; margin-bottom: 20px;
+  }
+  .fdet {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .fdet-ico { font-size: 20px; flex-shrink: 0; }
+  .fdet-text h5 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .fdet-text p  { font-size: 12px; color: var(--text-sub); }
+
+  /* PATHS */
+  .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .path-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+  }
+  .path-num {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    padding: 4px 10px; border-radius: 8px; margin-bottom: 10px;
+  }
+  .pn-blue   { background: var(--accent-light); color: var(--accent); }
+  .pn-green  { background: var(--green-light);  color: var(--green); }
+  .pn-orange { background: var(--orange-light); color: #b57a10; }
+  .path-card .big { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .path-card .sub { font-size: 13px; color: var(--text-sub); margin-bottom: 12px; line-height: 1.6; }
+  .cond-list { list-style: none; padding: 0; }
+  .cond-list li {
+    font-size: 12px; color: var(--text-sub); padding: 5px 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 7px;
+  }
+  .cond-list li:first-child { border-top: none; }
+  .ck { color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+  /* SCORE SIMPLE */
+  .score-simple { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .score-col {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .score-col h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .score-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .score-item:last-child { border-bottom: none; }
+  .score-item .dot-g { color: var(--green); font-size: 16px; line-height: 1; flex-shrink: 0; }
+  .score-item .dot-r { color: var(--red);   font-size: 16px; line-height: 1; flex-shrink: 0; }
+  .score-item-text { color: var(--text-sub); }
+
+  /* SCORE TABLE */
+  .score-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .score-table th {
+    background: var(--surface2); padding: 10px 14px; text-align: left;
+    font-weight: 700; border-bottom: 2px solid var(--border);
+  }
+  .score-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-sub); }
+  .score-table tr:last-child td { border-bottom: none; }
+  .plus  { color: #1a9b6b; font-weight: 700; }
+  .minus { color: var(--red); font-weight: 700; }
+
+  /* USAGE */
+  .use-steps { display: flex; flex-direction: column; gap: 16px; }
+  .use-step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow);
+    display: flex; align-items: flex-start; gap: 16px;
+  }
+  .snum {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent-light); color: var(--accent);
+    font-weight: 800; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sbody h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .sbody p, .sbody li { font-size: 13px; color: var(--text-sub); }
+  .sbody ul { padding-left: 16px; margin-top: 6px; }
+  .sbody ul li { margin-bottom: 3px; }
+
+  /* GENRE */
+  .genre-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 12px; }
+  .genre-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); text-align: center;
+  }
+  .genre-card .g-ico  { font-size: 26px; margin-bottom: 8px; }
+  .genre-card .g-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  .genre-card .g-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+
+  /* NOTE BOXES */
+  .tip {
+    background: var(--orange-light); border: 1px solid #f5d899;
+    border-radius: var(--radius); padding: 14px 18px; font-size: 13px;
+    color: #7a5a10; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .info {
+    background: var(--accent-light); border: 1px solid #c5d0fb;
+    border-radius: var(--radius); padding: 14px 18px; font-size: 13px;
+    color: #2d46a0; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
+  }
+
+  /* DETAIL TOGGLE */
+  details { margin-top: 10px; }
+  summary {
+    cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600;
+    list-style: none; display: flex; align-items: center; gap: 5px; user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▶'; font-size: 10px; transition: transform .2s; }
+  details[open] summary::before { transform: rotate(90deg); }
+  details .detail-body { margin-top: 12px; }
+
+  footer {
+    text-align: center; padding: 40px 24px;
+    font-size: 12px; color: var(--text-sub); border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    nav a { display: none; }
+    .hero { padding: 48px 20px; }
+    .page { padding: 36px 16px; }
+    .flow { grid-template-columns: 1fr; gap: 6px; }
+    .flow-arrow { transform: rotate(90deg); }
+    .score-simple { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">🎬 Ad Break Marker</span>
+  <a href="#overview">개요</a>
+  <a href="#how">작동 방식</a>
+  <a href="#score">점수 기준</a>
+  <a href="#usage">사용법</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">팀 내부 가이드</div>
+  <h1>Ad Break Marker<br>자동화 도구</h1>
+  <p>영상을 AI가 분석해서 광고 넣기 좋은 구간 후보를<br>Premiere Pro 마커 파일로 자동 생성해 드립니다.</p>
+  <div class="hero-chips">
+    <span class="chip">🖥️ 외부로 영상 전송 없음</span>
+    <span class="chip">⚡ Apple Silicon 최적화</span>
+    <span class="chip">🎞️ Premiere Pro 바로 사용 가능</span>
+    <span class="chip">🇰🇷 한국어 음성 특화</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ── 개요 ── -->
+  <section class="section" id="overview">
+    <div class="section-title">💡 이 도구는 무엇인가요?</div>
+    <p class="section-sub">광고 타임코드를 일일이 수동으로 찾는 시간을 줄이기 위해 만든 내부 자동화 도구입니다.</p>
+
+    <div class="grid2">
+      <div class="card card-bl">
+        <h3>📌 왜 만들었나요?</h3>
+        <p>편집자가 광고 삽입 지점을 찾으려면 영상을 처음부터 끝까지 직접 봐야 했습니다. 이 도구는 AI가 "광고 넣기 좋은 구간 후보"를 먼저 좁혀주고, 편집자는 최종 선택만 하면 됩니다.</p>
+      </div>
+      <div class="card card-gr">
+        <h3>✅ 두 가지 원칙</h3>
+        <ul>
+          <li><b>완전 자동이 아닙니다.</b> AI는 후보를 제안하고 결정은 편집자가 합니다.</li>
+          <li><b>허용 프레임에만 마커를 찍습니다.</b> 방송 기준에 맞는 특정 프레임(:00~:03, :28~:29)에만 마커가 생성됩니다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info">
+      <span>ℹ️</span>
+      <span>결과물은 Premiere Pro에서 <b>파일 → 가져오기</b>로 불러오는 XML 파일입니다. 불러오면 타임라인에 마커가 자동으로 표시됩니다.</span>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ── 작동 방식 ── -->
+  <section class="section" id="how">
+    <div class="section-title">🔄 어떻게 작동하나요?</div>
+    <p class="section-sub">영상 파일을 넣으면 크게 4단계를 거쳐 마커 파일이 만들어집니다.</p>
+
+    <!-- 큰 흐름 -->
+    <div class="flow">
+      <div class="flow-box">
+        <div class="flow-ico">🎬</div>
+        <div class="flow-label">영상 분석</div>
+        <div class="flow-desc">음성·장면·밝기를<br>동시에 읽어냄</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-ico">🤖</div>
+        <div class="flow-label">AI 검증</div>
+        <div class="flow-desc">진짜 장면 전환인지<br>AI가 눈으로 확인</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-ico">📍</div>
+        <div class="flow-label">후보 생성</div>
+        <div class="flow-desc">세 가지 방식으로<br>마커 후보 선별</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-ico">📄</div>
+        <div class="flow-label">파일 출력</div>
+        <div class="flow-desc">1차·2차 XML로<br>Premiere에 바로 사용</div>
+      </div>
+    </div>
+
+    <!-- 1단계 상세 -->
+    <p style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text)">① 영상 분석 — 네 가지를 동시에 읽어냅니다</p>
+    <div class="flow-detail">
+      <div class="fdet">
+        <div class="fdet-ico">🗣️</div>
+        <div class="fdet-text">
+          <h5>음성을 텍스트로</h5>
+          <p>무슨 말을 하는지, 언제 문장이 끝나는지 파악</p>
+        </div>
+      </div>
+      <div class="fdet">
+        <div class="fdet-ico">✂️</div>
+        <div class="fdet-text">
+          <h5>장면 전환 위치</h5>
+          <p>화면이 확 바뀌는 지점을 빠르게 탐색</p>
+        </div>
+      </div>
+      <div class="fdet">
+        <div class="fdet-ico">🔊</div>
+        <div class="fdet-text">
+          <h5>음성 음량 흐름</h5>
+          <p>어느 구간에 소리가 없는지 감지</p>
+        </div>
+      </div>
+      <div class="fdet">
+        <div class="fdet-ico">🌑</div>
+        <div class="fdet-text">
+          <h5>화면 밝기 흐름</h5>
+          <p>페이드 인/아웃으로 어두워지는 구간 감지</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <span>⚡</span>
+      <span>네 가지 분석이 동시에 실행됩니다. 한 번 분석한 영상은 결과가 저장되어 다음에는 훨씬 빠르게 처리됩니다.</span>
+    </div>
+
+    <!-- 2단계 -->
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">② AI 검증 — 장면이 진짜 바뀐 건지 확인합니다</p>
+    <div class="card">
+      <p>첫 번째 단계에서 찾은 "장면 전환 후보"들을 AI가 컷 전후 화면 두 장을 비교해 실제로 다른 장면인지 확인합니다. 단순히 카메라 앵글이 바뀌거나 자막·그래픽이 들어온 것은 걸러냅니다. 동시에 컷 전후의 발화 내용을 읽어서 이야기 주제가 바뀌었는지도 파악합니다.</p>
+      <details style="margin-top:10px">
+        <summary>더 자세히 보기</summary>
+        <div class="detail-body">
+          <p style="font-size:13px; color:var(--text-sub)">이미지 비교 AI(CLIP)가 컷 전후 프레임을 비교해 <b>유사도 0~1</b>로 수치화합니다. 0.80 미만이면 진짜 장면 전환으로 확정합니다. 한국어 문장 이해 AI(ko-sroberta)는 컷 전후 발화를 비교해 주제 전환 여부를 판단합니다. 이 결과는 마커 점수에 반영됩니다.</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- 3단계: 세 가지 경로 -->
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">③ 후보 생성 — 세 가지 상황에서 마커를 찍습니다</p>
+    <p style="font-size:13px; color:var(--text-sub); margin-bottom:16px">아래 세 가지 상황 중 하나라도 해당되면 마커 후보가 생성됩니다. 중복되는 지점은 자동으로 하나로 합칩니다.</p>
+
+    <div class="paths">
+      <div class="path-card">
+        <div class="path-num pn-blue">Path 1</div>
+        <div class="big">말이 끊기는 순간</div>
+        <div class="sub">문장이 마무리되고 잠깐 조용해지는 구간입니다. 강의, 토크쇼, 예능처럼 말이 중심인 콘텐츠에서 가장 많이 잡힙니다.</div>
+        <ul class="cond-list">
+          <li><span class="ck">✓</span>문장이 자연스럽게 끝나고</li>
+          <li><span class="ck">✓</span>0.5초 이상 음성이 없고</li>
+          <li><span class="ck">✓</span>그 침묵 안에 허용 프레임이 있을 때</li>
+        </ul>
+      </div>
+
+      <div class="path-card">
+        <div class="path-num pn-green">Path 2</div>
+        <div class="big">화면이 확 바뀌는 순간</div>
+        <div class="sub">AI가 확인한 진짜 장면 전환 지점입니다. 빠르게 편집된 영상에서 침묵이 없어도 잡아냅니다.</div>
+        <ul class="cond-list">
+          <li><span class="ck">✓</span>AI가 진짜 장면 전환으로 확인하고</li>
+          <li><span class="ck">✓</span>전환 지점 근처에 문장 경계가 있고</li>
+          <li><span class="ck">✓</span>해당 프레임이 허용 프레임일 때</li>
+        </ul>
+      </div>
+
+      <div class="path-card">
+        <div class="path-num pn-orange">Path 3</div>
+        <div class="big">화면이 어두워지는 순간</div>
+        <div class="sub">페이드 아웃으로 암전되는 구간입니다. 영화·음악 콘텐츠처럼 장면 사이에 페이드가 자주 쓰이는 영상에서 효과적입니다.</div>
+        <ul class="cond-list">
+          <li><span class="ck">✓</span>화면이 서서히 어두워지는 구간이고</li>
+          <li><span class="ck">✓</span>가장 어두운 프레임 근처에 음성이 없고</li>
+          <li><span class="ck">✓</span>그 침묵 안에 허용 프레임이 있을 때</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4단계 -->
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">④ 파일 출력 — 두 종류의 XML이 만들어집니다</p>
+    <div class="grid2">
+      <div class="card card-bl">
+        <h3>1차 XML <span style="font-size:12px; color:var(--text-sub); font-weight:400">_adbreaks.xml</span></h3>
+        <p>간격 규칙이 적용된 실사용 파일입니다. 첫 광고는 3~10분 사이, 이후 광고는 10~15분 간격으로 배치됩니다. 같은 구간 안에서 점수 순으로 최대 5개 후보가 표시됩니다.</p>
+      </div>
+      <div class="card card-gr">
+        <h3>2차 XML <span style="font-size:12px; color:var(--text-sub); font-weight:400">_adbreaks_all.xml</span></h3>
+        <p>장면 전환·페이드가 확인된 모든 지점을 간격 제한 없이 담은 파일입니다. 1차 파일을 검토할 때 보조 참고용으로 사용합니다.</p>
+      </div>
+    </div>
+  </section>
+
+    <!-- 기술 상세 토글 -->
+    <details style="margin-top:28px">
+      <summary>자세한 기술 정보 보기</summary>
+      <div class="detail-body">
+        <div class="grid2">
+          <div class="card">
+            <h3>🗣️ 음성 인식 (Whisper)</h3>
+            <p>OpenAI가 만든 음성 인식 AI입니다. 영상의 한국어 음성을 텍스트로 변환하고 각 문장의 시작·끝 시각을 밀리초 단위로 파악합니다. Apple Silicon GPU를 활용해 CPU보다 약 7배 빠르게 처리합니다.</p>
+          </div>
+          <div class="card">
+            <h3>🎬 장면 비교 AI (CLIP)</h3>
+            <p>OpenAI의 이미지 이해 AI입니다. 컷 전후 프레임 두 장을 비교해 같은 장면인지 다른 장면인지를 0~1 유사도로 수치화합니다. 0.80 미만이면 진짜 장면 전환으로 확정합니다.</p>
+          </div>
+          <div class="card">
+            <h3>🧠 한국어 이해 AI (ko-sroberta)</h3>
+            <p>한국어 특화 언어 모델입니다. 두 문장을 읽고 내용이 얼마나 비슷한지 수치화합니다. 0.75 미만이면 주제가 바뀐 것으로 판단해 점수에 반영합니다.</p>
+          </div>
+          <div class="card">
+            <h3>🎥 영상 처리 (ffmpeg / PySceneDetect)</h3>
+            <p>영상 분석 전용 도구입니다. PySceneDetect가 픽셀 변화로 장면 전환 후보를 빠르게 탐지하고, ffmpeg이 음성 음량 곡선과 프레임별 밝기 데이터를 추출합니다.</p>
+          </div>
+        </div>
+      </div>
+    </details>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- ── 점수 기준 ── -->
+  <section class="section" id="score">
+    <div class="section-title">📊 어떤 지점을 좋은 후보로 보나요?</div>
+    <p class="section-sub">조건을 통과한 마커끼리 순위를 정할 때 아래 기준으로 점수를 매깁니다. 점수가 높을수록 1차 XML에서 앞에 추천됩니다.</p>
+
+    <!-- 쉬운 버전 -->
+    <div class="score-simple">
+      <div class="score-col">
+        <h4 style="color:var(--green)">✅ 이런 지점을 선호해요</h4>
+        <div class="score-item">
+          <span class="dot-g">●</span>
+          <span class="score-item-text">화면이 다른 장소·장면으로 바뀌는 순간</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-g">●</span>
+          <span class="score-item-text">이야기 주제가 완전히 달라지는 전환점</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-g">●</span>
+          <span class="score-item-text">"자 이제", "다음으로", "정리하자면" 같이 새 내용을 시작하는 말</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-g">●</span>
+          <span class="score-item-text">"이상입니다", "마치겠습니다" 같이 내용을 마무리하는 말</span>
+        </div>
+      </div>
+      <div class="score-col">
+        <h4 style="color:var(--red)">❌ 이런 지점은 피해요</h4>
+        <div class="score-item">
+          <span class="dot-r">●</span>
+          <span class="score-item-text">구독, 좋아요, 알림 등 홍보성 멘트가 있는 구간</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-r">●</span>
+          <span class="score-item-text">"근데", "그리고", "사실" 처럼 말이 계속 이어지는 구간</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-r">●</span>
+          <span class="score-item-text">질문을 던지고 바로 답하는 자문자답 중간</span>
+        </div>
+        <div class="score-item">
+          <span class="dot-r">●</span>
+          <span class="score-item-text">앞 문장이 너무 짧아서 말 조각처럼 보이는 경우</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상세 점수 테이블 -->
+    <details>
+      <summary>상세 점수 수치 보기</summary>
+      <div class="detail-body">
+        <div class="card" style="padding:0; overflow:hidden; margin-top:4px">
+          <table class="score-table">
+            <thead>
+              <tr><th>요소</th><th>점수</th><th>설명</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>장면 전환 (AI 확인)</td><td class="plus">+8.0</td><td>진짜 화면이 바뀐 컷</td></tr>
+              <tr><td>주제 전환 (내용 비교 AI)</td><td class="plus">+4.0</td><td>전후 이야기 내용이 달라짐</td></tr>
+              <tr><td>강한 화제 전환 표현</td><td class="plus">+3.0</td><td>"자 이제 / 다음으로 / 정리하자면…"으로 시작</td></tr>
+              <tr><td>마무리 표현</td><td class="plus">+2.0</td><td>"겠습니다 / 이상입니다 / 마치겠습니다…"로 종료</td></tr>
+              <tr><td>최우선 프레임(:00)</td><td class="plus">+1.0</td><td>가장 우선하는 허용 프레임 위치</td></tr>
+              <tr><td>약한 전환 표현</td><td class="plus">+1.0</td><td>"자 / 이제 / 그러면…"으로 시작</td></tr>
+              <tr><td>AI 재확인 결과: 전환 아님</td><td class="minus">−8.0</td><td>장면이 실제로 바뀌지 않은 것으로 최종 판정</td></tr>
+              <tr><td>홍보성 멘트 인접</td><td class="minus">−3.0</td><td>구독·좋아요·알림·스폰서 등 CTA 발화</td></tr>
+              <tr><td>말이 이어지는 표현</td><td class="minus">−2.0</td><td>"근데 / 사실 / 그리고" 등 연속 표현</td></tr>
+              <tr><td>짧은 선행 문장</td><td class="minus">−1.5</td><td>앞 문장이 8자 미만 (말 조각 가능성)</td></tr>
+              <tr><td>질문-자답 패턴</td><td class="minus">−1.0</td><td>자문자답 구간 중간은 광고 삽입 부적절</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ── 사용법 ── -->
+  <section class="section" id="usage">
+    <div class="section-title">🖥️ 사용 방법</div>
+    <p class="section-sub">서버를 실행하고, 브라우저에서 영상 파일을 분석하면 끝입니다.</p>
+
+    <div class="use-steps">
+
+      <div class="use-step">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <h4>서버 시작하기</h4>
+          <p>터미널을 열고 아래 두 줄을 입력하세요.</p>
+          <div style="background:#1a1d2e; border-radius:8px; padding:12px 16px; font-family:monospace; font-size:13px; color:#a8d4ff; margin-top:8px; line-height:1.8">
+            cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro<br>
+            ../.venv/bin/python app.py
+          </div>
+          <p style="margin-top:8px">🟢 터미널에 <code style="font-size:12px; background:var(--surface2); padding:1px 5px; border-radius:4px">http://localhost:8000</code> 이 표시되면 브라우저에서 해당 주소를 열어 주세요.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <h4>영상 파일 불러오기</h4>
+          <p>세 가지 방법 중 편한 것을 사용하세요.</p>
+          <ul>
+            <li><b>📂 파일 선택 버튼</b> — 클릭 후 Finder 창에서 영상 선택 (가장 편리, 권장)</li>
+            <li><b>드래그 앤 드롭</b> — Finder에서 파일을 입력창에 끌어다 놓기</li>
+            <li><b>직접 입력</b> — 파일 경로를 붙여넣기</li>
+          </ul>
+          <p style="margin-top:6px">여러 파일은 한 번에 선택하거나 줄바꿈으로 구분해 입력할 수 있습니다. 폴더를 입력하면 안에 있는 영상을 모두 분석합니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <h4>장르 선택</h4>
+          <p>영상 장르에 맞는 카드를 클릭하면 분석 기준이 자동으로 조정됩니다.</p>
+          <div class="genre-grid">
+            <div class="genre-card">
+              <div class="g-ico">🎬</div>
+              <div class="g-name">영화 / 드라마</div>
+              <div class="g-desc">장면 전환과 페이드 아웃 중심</div>
+            </div>
+            <div class="genre-card">
+              <div class="g-ico">🎵</div>
+              <div class="g-name">음악 / 공연</div>
+              <div class="g-desc">무대 전환 위주, 주제 변화 덜 반영</div>
+            </div>
+            <div class="genre-card">
+              <div class="g-ico">🎤</div>
+              <div class="g-name">토크 / 예능</div>
+              <div class="g-desc">발화 흐름과 장면 전환 균형</div>
+            </div>
+            <div class="genre-card">
+              <div class="g-ico">📚</div>
+              <div class="g-name">강의 / 정보</div>
+              <div class="g-desc">주제 전환 챕터 구분에 최적</div>
+            </div>
+          </div>
+          <p style="font-size:12px; color:var(--text-sub); margin-top:10px">▼ 세부 조정을 열면 각 기준의 민감도를 슬라이더로 직접 조절할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">4</div>
+        <div class="sbody">
+          <h4>분석 시작 → 결과 확인</h4>
+          <p><b>분석 시작</b> 버튼을 누르면 처리가 시작됩니다. 처음 분석은 영상 길이에 따라 수 분이 걸릴 수 있습니다. 같은 영상을 다시 분석하면 이전 결과를 재사용해 훨씬 빠릅니다.</p>
+          <p style="margin-top:6px">완료 후 각 영상마다 결과 카드가 표시됩니다. 기본으로 <b>다운로드 버튼</b>만 보이고, <b>▶ 타임코드 상세 보기</b>를 누르면 각 구간의 후보 목록을 확인할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">5</div>
+        <div class="sbody">
+          <h4>XML 다운로드 → Premiere에 적용</h4>
+          <ul>
+            <li><b>1차 XML</b> — 간격 규칙이 적용된 파일. 일반적으로 이 파일을 사용합니다.</li>
+            <li><b>2차 XML</b> — 장면 전환이 확인된 모든 지점. 참고용.</li>
+          </ul>
+          <p style="margin-top:8px">Premiere Pro → <b>파일 → 가져오기</b> → XML 파일 선택 → 타임라인에 마커 자동 표시</p>
+        </div>
+      </div>
+
+    </div>
+
+
+  </section>
+
+</div>
+
+<footer>
+  Ad Break Marker Auto Pro — 팀 내부 가이드 &nbsp;·&nbsp; 문의: 개발팀
+</footer>
+
+</body>
+</html>
