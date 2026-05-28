@@ -48,6 +48,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             with open(index, "rb") as f:
                 self.wfile.write(f.read())
             return
+
+        if self.path == "/api/pick-files":
+            # macOS Finder 파일 선택 창 — osascript로 전체 경로 반환
+            import subprocess
+            script = (
+                'set theFiles to choose file of type {"mp4","mov","mkv","m4v"} '
+                'with multiple selections allowed '
+                'with prompt "영상 파일을 선택하세요"\n'
+                'set out to ""\n'
+                'repeat with f in theFiles\n'
+                '  set out to out & POSIX path of f & "\\n"\n'
+                'end repeat\n'
+                'return out'
+            )
+            try:
+                r = subprocess.run(["osascript", "-e", script],
+                                   capture_output=True, text=True, timeout=120)
+                paths = [p.strip() for p in r.stdout.splitlines() if p.strip()]
+                self._send_json(200, {"paths": paths})
+            except subprocess.TimeoutExpired:
+                self._send_json(200, {"paths": []})
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
         self.send_response(404)
         self.end_headers()
 

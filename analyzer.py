@@ -15,7 +15,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 from pipeline import (get_duration, get_fps, transcribe, detect_scenes,
-                      extract_voice_envelope)
+                      extract_voice_envelope, detect_fade_cuts)
 from local_breaks import select_ad_breaks_local, pick_primary, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
@@ -32,14 +32,19 @@ def _verify(video_path, markers, progress=None):
     Cut-anchor markers (cut_anchor=True) already passed batch CLIP before
     candidate generation; they are annotated but not re-verified here.
     """
+    # fade_anchor 마커는 CLIP 재검증 제외 — 암전 프레임에서 CLIP 유사도는 항상 낮게 나와 무의미함
     need_clip = [m for m in markers
-                 if m["has_cut"] and not m.get("clip_preconfirmed")]
+                 if m["has_cut"] and not m.get("clip_preconfirmed")
+                 and not m.get("fade_anchor")]
     n_cut = len(need_clip)
     if n_cut and progress:
         progress(f"장면 전환 검수 중... (CLIP, {n_cut}개)")
     kept = []
     for m in markers:
         if not m["has_cut"]:
+            kept.append(m)
+            continue
+        if m.get("fade_anchor"):
             kept.append(m)
             continue
         if m.get("clip_preconfirmed"):
@@ -75,14 +80,16 @@ def run_analysis(video_path, settings=None, progress=None):
     # read the video on their own and don't use each other's output, so we run
     # them concurrently. Results are identical to running them in order.
     if progress:
-        progress("자막 변환 · 장면 감지 · 음성 분석 (병렬 처리 중)...")
-    with ThreadPoolExecutor(max_workers=3) as pool:
+        progress("자막 변환 · 장면 감지 · 음성 분석 · 페이드 탐지 (병렬 처리 중)...")
+    with ThreadPoolExecutor(max_workers=4) as pool:
         f_segments = pool.submit(transcribe, video_path, progress)
         f_scenes = pool.submit(detect_scenes, video_path, progress)
         f_voice = pool.submit(extract_voice_envelope, video_path, progress)
+        f_fades = pool.submit(detect_fade_cuts, video_path, progress)
         segments = f_segments.result()
         scenes = f_scenes.result()
         voice = f_voice.result()
+        fades = f_fades.result()
 
     # Batch CLIP: confirm which scene cuts are genuine transitions (cached).
     # Used to upgrade silence-based markers within SCENE_RADIUS_CLIP of a
@@ -111,7 +118,8 @@ def run_analysis(video_path, settings=None, progress=None):
     markers = select_ad_breaks_local(segments, duration, settings,
                                      scene_cuts=scenes, voice_env=voice,
                                      clip_real_cuts=clip_real_cuts,
-                                     text_sims=text_sims)
+                                     text_sims=text_sims,
+                                     fade_cuts=fades)
 
     # Attach batch CLIP similarity to clip_preconfirmed markers.
     for m in markers:

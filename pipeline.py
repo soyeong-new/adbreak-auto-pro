@@ -27,6 +27,10 @@ LANGUAGE = "ko"
 SR = 1000                   # audio extraction sample rate
 ENV_HZ = 20                 # voice envelope resolution
 
+# Path 3 — 페이드 인/아웃 탐지 파라미터
+FADE_DARK_THRESH = 10.0     # 0-255: 이 값 미만이면 "어두운 프레임"으로 판단
+FADE_MIN_FRAMES  = 5        # 연속 어두운 프레임이 최소 이 수 이상이어야 페이드로 인정
+
 _fw_model = None
 
 
@@ -135,6 +139,58 @@ def detect_scenes(video_path, progress=None):
             for i, (start, _end) in enumerate(scene_list) if i > 0]
     _save_cache(video_path, "scenes", {"scenes": cuts})
     return cuts
+
+
+def detect_fade_cuts(video_path, progress=None):
+    """페이드 인/아웃 V 꼭짓점 탐지 — ffmpeg 프레임별 밝기 분석. Cached.
+
+    32×18 그레이스케일 축소 프레임의 평균 밝기를 프레임마다 계산한 뒤,
+    FADE_MIN_FRAMES 이상 연속으로 FADE_DARK_THRESH(10/255) 미만인 구간을 "페이드"로 보고
+    그 구간에서 가장 어두운 프레임(V 꼭짓점)의 시각을 반환합니다.
+
+    반환: [float, ...] — V 꼭짓점 시각(초) 목록.
+    CLIP 검증 없음 (암전 프레임에서는 CLIP 코사인 유사도가 무의미하게 낮게 나옴).
+    """
+    cached = _load_cache(video_path, "fades")
+    if cached is not None:
+        return cached["fades"]
+
+    if progress:
+        progress("페이드 인/아웃 탐지 중...")
+
+    import numpy as np
+    W, H = 32, 18
+    cmd = ["ffmpeg", "-v", "error", "-i", video_path,
+           "-vf", f"scale={W}:{H}",
+           "-an", "-f", "rawvideo", "-pix_fmt", "gray", "-"]
+    raw = subprocess.run(cmd, capture_output=True).stdout
+    frame_size = W * H
+    n_frames = len(raw) // frame_size
+    if n_frames == 0:
+        _save_cache(video_path, "fades", {"fades": []})
+        return []
+
+    fps = get_fps(video_path) or 29.97
+    frames = (np.frombuffer(raw[:n_frames * frame_size], dtype=np.uint8)
+              .reshape(n_frames, frame_size))
+    brightness = frames.mean(axis=1)  # shape: (n_frames,), 0–255
+
+    fades = []
+    i = 0
+    while i < n_frames:
+        if brightness[i] < FADE_DARK_THRESH:
+            j = i
+            while j < n_frames and brightness[j] < FADE_DARK_THRESH:
+                j += 1
+            if j - i >= FADE_MIN_FRAMES:
+                darkest = i + int(np.argmin(brightness[i:j]))
+                fades.append(round(darkest / fps, 3))
+            i = j
+        else:
+            i += 1
+
+    _save_cache(video_path, "fades", {"fades": fades})
+    return fades
 
 
 def extract_voice_envelope(video_path, progress=None):
