@@ -39,7 +39,7 @@
              padding:10px 12px; border-radius:8px; font-size:13px; font-family:inherit; resize:vertical; }
 
   /* ── 장르 카드 ── */
-  .genre-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .genre-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   .genre-card { border:2px solid var(--line); border-radius:12px; padding:18px 12px 14px;
                 cursor:pointer; text-align:center; transition:all .15s; user-select:none; }
   .genre-card:hover { border-color:var(--accent); }
@@ -208,19 +208,29 @@
           <div class="g-name">영화</div>
           <div class="g-desc">극영화 · 다큐<br>컷 중심 편집</div>
         </div>
-        <div class="genre-card" data-genre="music" onclick="selectGenre('music')">
+        <div class="genre-card" data-genre="drama" onclick="selectGenre('drama')">
+          <div class="g-icon">📺</div>
+          <div class="g-name">드라마</div>
+          <div class="g-desc">장면 전환 · 대화<br>균형 편집</div>
+        </div>
+        <div class="genre-card" data-genre="food" onclick="selectGenre('food')">
+          <div class="g-icon">🍽️</div>
+          <div class="g-name">푸드</div>
+          <div class="g-desc">요리 시연<br>토크 혼합</div>
+        </div>
+        <div class="genre-card" data-genre="kpop" onclick="selectGenre('kpop')">
           <div class="g-icon">🎵</div>
-          <div class="g-name">노래</div>
-          <div class="g-desc">뮤직비디오<br>공연 · 라이브</div>
+          <div class="g-name">케이팝</div>
+          <div class="g-desc">뮤직비디오<br>무대 · 공연</div>
         </div>
         <div class="genre-card active" data-genre="talk" onclick="selectGenre('talk')">
           <div class="g-icon">🎙</div>
-          <div class="g-name">토크 · 예능</div>
+          <div class="g-name">토크예능</div>
           <div class="g-desc">퀴즈쇼 · 예능<br>토크쇼</div>
         </div>
         <div class="genre-card" data-genre="lecture" onclick="selectGenre('lecture')">
           <div class="g-icon">📚</div>
-          <div class="g-name">강의 · 정보</div>
+          <div class="g-name">강의정보</div>
           <div class="g-desc">교육 · 설명<br>정보 채널</div>
         </div>
       </div>
@@ -325,7 +335,9 @@ ta.addEventListener('paste', e=>{
 // ── 장르 프리셋 ────────────────────────────────────
 const PRESETS = {
   movie:   {ws:8, wt:2, sm:5, pc:3},
-  music:   {ws:7, wt:0, sm:5, pc:1},
+  drama:   {ws:7, wt:3, sm:5, pc:3},
+  food:    {ws:6, wt:4, sm:4, pc:4},
+  kpop:    {ws:7, wt:0, sm:5, pc:1},
   talk:    {ws:6, wt:4, sm:3, pc:3},
   lecture: {ws:3, wt:8, sm:3, pc:5},
 };

@@ -208,7 +208,7 @@
   .sbody ul li { margin-bottom: 3px; }
 
   /* GENRE */
-  .genre-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+  .genre-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
   .genre-card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow); text-align: center;
@@ -302,10 +302,6 @@
   <h1>Ad Break Marker<br>자동화 도구</h1>
   <p>영상을 AI가 분석해서 광고 넣기 좋은 구간 후보를<br>Premiere Pro 마커 파일로 자동 생성해 드립니다.</p>
   <div class="hero-chips">
-    <span class="chip">🖥️ 외부로 영상 전송 없음</span>
-    <span class="chip">⚡ Apple Silicon 최적화</span>
-    <span class="chip">🎞️ Premiere Pro 바로 사용 가능</span>
-    <span class="chip">🇰🇷 한국어 음성 특화</span>
   </div>
 </div>
 
@@ -744,7 +740,6 @@
             <span class="folder">📁 드라마/</span><br>
             &nbsp;&nbsp;<span class="file">🎬 YBJ_S25_EP01.mp4</span> &nbsp;<span class="dim">← 원본 영상</span><br>
             &nbsp;&nbsp;<span class="file">📄 YBJ_S25_EP01_adbreaks.xml</span> &nbsp;<span class="dim">← 1차 (실사용)</span><br>
-            &nbsp;&nbsp;<span class="file">📄 YBJ_S25_EP01_adbreaks_all.xml</span> &nbsp;<span class="dim">← 2차 (참고용)</span>
           </div>
           <p style="margin-top:10px">Premiere Pro → <b>파일 → 가져오기</b> → XML 선택 → 타임라인에 마커 자동 표시</p>
         </div>
