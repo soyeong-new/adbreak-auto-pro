@@ -178,5 +178,34 @@ cat > "$BASE/강의정보/settings.json" << 'EOF'
 }
 EOF
 
-echo "✅ 완료 — 장르 폴더 6개 + settings.json 생성됨"
+# ── 여행 ───────────────────────────────────────────
+mkdir -p "$BASE/여행"
+cat > "$BASE/여행/settings.json" << 'EOF'
+{
+  "__장르": "여행 브이로그",
+  "__설명": "컷 전환과 침묵이 모두 많은 영상. 컷과 침묵이 동시에 겹치는 지점만 골라냅니다.",
+
+  "__파라미터_안내": {
+    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
+    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
+    "gap_min"        : "광고 간 최소 간격 (분)",
+    "gap_max"        : "광고 간 최대 간격 (분)",
+    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
+    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
+    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
+    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
+  },
+
+  "first_min"      : 3,
+  "first_max"      : 10,
+  "gap_min"        : 10,
+  "gap_max"        : 15,
+  "w_scene"        : 8,
+  "w_topic_change" : 0,
+  "silence_min"    : 0.7,
+  "p_cta"          : 6
+}
+EOF
+
+echo "✅ 완료 — 장르 폴더 7개 + settings.json 생성됨"
 ls "$BASE"
