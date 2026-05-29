@@ -120,7 +120,6 @@ def process_video(video_path):
     stem = os.path.splitext(os.path.basename(video_path))[0]
     folder = os.path.dirname(video_path)
     primary_out = os.path.join(folder, f"{stem}_adbreaks.xml")
-    all_out = os.path.join(folder, f"{stem}_adbreaks_all.xml")
 
     print(f"\n[분석 시작] {stem}", flush=True)
     print("  파일 안정화 대기 중 (다운로드 완료 확인)...", flush=True)
@@ -128,6 +127,22 @@ def process_video(video_path):
     if not wait_for_stable(video_path):
         print(f"  ✗ 타임아웃: 파일이 너무 오래 걸립니다 — {stem}", flush=True)
         return
+
+    # 5분 미만 영상 건너뜀
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", video_path],
+            capture_output=True, text=True, timeout=30
+        )
+        duration = float(result.stdout.strip())
+        if duration < 300:
+            mins = duration / 60
+            print(f"  ⏭ 건너뜀: 영상 길이 {mins:.1f}분 — 5분 미만은 분석하지 않습니다.", flush=True)
+            return
+    except Exception:
+        pass  # ffprobe 실패 시 그냥 진행
 
     settings = load_settings(folder)
 
@@ -139,13 +154,9 @@ def process_video(video_path):
         )
         with open(primary_out, "w", encoding="utf-8") as f:
             f.write(report["xml_primary"])
-        with open(all_out, "w", encoding="utf-8") as f:
-            f.write(report["xml_all"])
         n_primary = report.get("primary_count", "?")
-        n_all = report.get("marker_count", "?")
-        print(f"  ✓ 완료 — 광고 {n_primary}개 / 전체후보 {n_all}개", flush=True)
+        print(f"  ✓ 완료 — 광고 {n_primary}개", flush=True)
         print(f"    → {primary_out}", flush=True)
-        print(f"    → {all_out}", flush=True)
     except Exception as e:
         print(f"  ✗ 오류: {e}", flush=True)
 
