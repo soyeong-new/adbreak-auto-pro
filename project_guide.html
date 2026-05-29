@@ -196,20 +196,36 @@
     font-weight: 800; font-size: 13px;
     display: flex; align-items: center; justify-content: center;
   }
+  .snum-green {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--green-light); color: var(--green);
+    font-weight: 800; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
   .sbody h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
   .sbody p, .sbody li { font-size: 13px; color: var(--text-sub); }
   .sbody ul { padding-left: 16px; margin-top: 6px; }
   .sbody ul li { margin-bottom: 3px; }
 
   /* GENRE */
-  .genre-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 12px; }
+  .genre-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
   .genre-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); text-align: center;
+    border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow); text-align: center;
   }
-  .genre-card .g-ico  { font-size: 26px; margin-bottom: 8px; }
-  .genre-card .g-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
-  .genre-card .g-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+  .genre-card .g-ico  { font-size: 24px; margin-bottom: 6px; }
+  .genre-card .g-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .genre-card .g-desc { font-size: 11px; color: var(--text-sub); line-height: 1.5; }
+
+  /* FOLDER TREE */
+  .folder-tree {
+    background: #1a1d2e; border-radius: 10px; padding: 16px 20px;
+    font-family: monospace; font-size: 13px; color: #a8d4ff;
+    line-height: 2; margin-top: 12px;
+  }
+  .folder-tree .folder { color: #f5c842; }
+  .folder-tree .file   { color: #7ec8a8; }
+  .folder-tree .dim    { color: #556070; }
 
   /* NOTE BOXES */
   .tip {
@@ -222,6 +238,26 @@
     border-radius: var(--radius); padding: 14px 18px; font-size: 13px;
     color: #2d46a0; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
   }
+  .success {
+    background: var(--green-light); border: 1px solid #b0e8d2;
+    border-radius: var(--radius); padding: 14px 18px; font-size: 13px;
+    color: #1a6b4a; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
+  }
+
+  /* METHOD HEADER */
+  .method-header {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border-radius: 10px;
+    padding: 12px 18px; margin-bottom: 16px; margin-top: 28px;
+  }
+  .method-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; white-space: nowrap;
+  }
+  .mb-blue  { background: var(--accent-light); color: var(--accent); }
+  .mb-green { background: var(--green-light);  color: var(--green); }
+  .method-header h3 { font-size: 14px; font-weight: 700; }
+  .method-header p  { font-size: 12px; color: var(--text-sub); }
 
   /* DETAIL TOGGLE */
   details { margin-top: 10px; }
@@ -256,7 +292,9 @@
   <a href="#overview">개요</a>
   <a href="#how">작동 방식</a>
   <a href="#score">점수 기준</a>
-  <a href="#usage">사용법</a>
+  <a href="#usage">웹 분석</a>
+  <a href="#team-upload">팀 업로드</a>
+  <a href="#sheet">시트 입력</a>
 </nav>
 
 <div class="hero">
@@ -456,6 +494,14 @@
             <p>영상 분석 전용 도구입니다. PySceneDetect가 픽셀 변화로 장면 전환 후보를 빠르게 탐지하고, ffmpeg이 음성 음량 곡선과 프레임별 밝기 데이터를 추출합니다.</p>
           </div>
         </div>
+
+        <div class="card" style="margin-top:14px; border-left:4px solid var(--orange)">
+          <h3>🔍 픽셀 비교 vs CLIP — 왜 두 가지를 같이 쓰나요?</h3>
+          <p style="margin-top:6px"><b>PySceneDetect(픽셀 비교)</b>는 인접한 두 프레임의 RGB 픽셀 값 차이를 수치로 계산합니다. 전체적으로 픽셀이 많이 바뀌면 장면이 전환됐다고 판단합니다. 계산이 단순해서 빠르지만, 조명이 갑자기 바뀌거나 카메라가 빠르게 흔들려도 장면 전환으로 잘못 잡히는 경우가 있습니다.</p>
+          <p style="margin-top:8px"><b>CLIP</b>은 이미지와 텍스트를 수억 장 함께 학습해서 "이 화면이 어떤 장면인지"를 이해하는 딥러닝 모델입니다. 픽셀이 많이 달라져도 같은 장소·인물이면 전환이 아닌 것으로 걸러냅니다.</p>
+          <p style="margin-top:8px">이 프로젝트에서 두 가지를 함께 쓰는 이유가 바로 이겁니다. <b>PySceneDetect로 빠르게 후보를 좁히고, CLIP으로 그 후보가 진짜 장면 전환인지 정밀하게 검증합니다.</b> 속도와 정확도를 동시에 잡는 구조입니다.</p>
+        </div>
+
       </div>
     </details>
 
@@ -540,10 +586,10 @@
 
   <hr class="divider">
 
-  <!-- ── 사용법 ── -->
+  <!-- ── 사용법 (웹) ── -->
   <section class="section" id="usage">
-    <div class="section-title">🖥️ 사용 방법</div>
-    <p class="section-sub">서버를 실행하고, 브라우저에서 영상 파일을 분석하면 끝입니다.</p>
+    <div class="section-title">🖥️ 웹 브라우저로 직접 분석하기</div>
+    <p class="section-sub">운영 담당자가 로컬에서 서버를 켜고 브라우저로 바로 분석하는 방법입니다.</p>
 
     <div class="use-steps">
 
@@ -582,23 +628,33 @@
           <div class="genre-grid">
             <div class="genre-card">
               <div class="g-ico">🎬</div>
-              <div class="g-name">영화 / 드라마</div>
-              <div class="g-desc">장면 전환과 페이드 아웃 중심</div>
+              <div class="g-name">영화</div>
+              <div class="g-desc">장면 전환·페이드 아웃 중심</div>
+            </div>
+            <div class="genre-card">
+              <div class="g-ico">📺</div>
+              <div class="g-name">드라마</div>
+              <div class="g-desc">장면 전환과 대화 흐름 균형</div>
+            </div>
+            <div class="genre-card">
+              <div class="g-ico">🍽️</div>
+              <div class="g-name">푸드</div>
+              <div class="g-desc">요리 시연과 토크 균형</div>
             </div>
             <div class="genre-card">
               <div class="g-ico">🎵</div>
-              <div class="g-name">음악 / 공연</div>
-              <div class="g-desc">무대 전환 위주, 주제 변화 덜 반영</div>
+              <div class="g-name">케이팝</div>
+              <div class="g-desc">무대 전환 위주</div>
             </div>
             <div class="genre-card">
               <div class="g-ico">🎤</div>
-              <div class="g-name">토크 / 예능</div>
+              <div class="g-name">토크예능</div>
               <div class="g-desc">발화 흐름과 장면 전환 균형</div>
             </div>
             <div class="genre-card">
               <div class="g-ico">📚</div>
-              <div class="g-name">강의 / 정보</div>
-              <div class="g-desc">주제 전환 챕터 구분에 최적</div>
+              <div class="g-name">강의정보</div>
+              <div class="g-desc">주제 전환 챕터 구분 최적</div>
             </div>
           </div>
           <p style="font-size:12px; color:var(--text-sub); margin-top:10px">▼ 세부 조정을 열면 각 기준의 민감도를 슬라이더로 직접 조절할 수 있습니다.</p>
@@ -610,7 +666,7 @@
         <div class="sbody">
           <h4>분석 시작 → 결과 확인</h4>
           <p><b>분석 시작</b> 버튼을 누르면 처리가 시작됩니다. 처음 분석은 영상 길이에 따라 수 분이 걸릴 수 있습니다. 같은 영상을 다시 분석하면 이전 결과를 재사용해 훨씬 빠릅니다.</p>
-          <p style="margin-top:6px">완료 후 각 영상마다 결과 카드가 표시됩니다. 기본으로 <b>다운로드 버튼</b>만 보이고, <b>▶ 타임코드 상세 보기</b>를 누르면 각 구간의 후보 목록을 확인할 수 있습니다.</p>
+          <p style="margin-top:6px">완료 후 각 영상마다 결과 카드가 표시됩니다. <b>다운로드 버튼</b>으로 XML을 받고, <b>▶ 타임코드 상세 보기</b>를 누르면 구간별 후보 목록을 확인할 수 있습니다.</p>
         </div>
       </div>
 
@@ -627,8 +683,143 @@
       </div>
 
     </div>
+  </section>
 
+  <hr class="divider">
 
+  <!-- ── 팀원 업로드 ── -->
+  <section class="section" id="team-upload">
+    <div class="section-title">📂 공유 폴더로 팀원이 업로드하기</div>
+    <p class="section-sub">팀원이 공유 서버(SMB)의 장르 폴더에 영상을 넣으면, 서버 컴퓨터가 자동으로 감지해서 분석합니다. 별도 프로그램 설치 없이 Finder만으로 사용할 수 있습니다.</p>
+
+    <div class="use-steps">
+
+      <div class="use-step">
+        <div class="snum-green">1</div>
+        <div class="sbody">
+          <h4>공유 서버 연결하기</h4>
+          <p>Finder에서 <b>이동 → 서버에 연결</b>을 클릭하고 아래 주소를 입력하세요.</p>
+          <div style="background:#1a1d2e; border-radius:8px; padding:12px 16px; font-family:monospace; font-size:13px; color:#a8d4ff; margin-top:8px">
+            smb://192.168.11.15
+          </div>
+          <p style="margin-top:8px">연결 후 <b>guest1 → Public → Drop Box</b> 경로로 들어가면 장르별 폴더가 보입니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum-green">2</div>
+        <div class="sbody">
+          <h4>장르 폴더에 영상 넣기</h4>
+          <p>분석할 영상의 장르에 맞는 폴더에 파일을 복사하세요. 폴더마다 해당 장르에 최적화된 분석 기준이 자동으로 적용됩니다.</p>
+          <div class="folder-tree">
+            <span class="dim">📁 Drop Box/</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 영화/</span> &nbsp;<span class="dim">← 장면 전환·페이드 중심</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 드라마/</span> &nbsp;<span class="dim">← 장면 전환·대화 균형</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 푸드/</span> &nbsp;<span class="dim">← 요리 시연·토크 균형</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 케이팝/</span> &nbsp;<span class="dim">← 무대 전환 중심</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 토크예능/</span> &nbsp;<span class="dim">← 발화·장면 전환 균형</span><br>
+            &nbsp;&nbsp;<span class="folder">📁 강의정보/</span> &nbsp;<span class="dim">← 주제 전환·챕터 구분</span>
+          </div>
+          <div class="tip" style="margin-top:12px">
+            <span>⚠️</span>
+            <span>영상이 완전히 복사된 뒤 분석이 시작됩니다. 복사 도중 분석이 시작되지 않으니 걱정하지 않아도 됩니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum-green">3</div>
+        <div class="sbody">
+          <h4>자동 분석 대기</h4>
+          <p>파일이 감지되면 서버 컴퓨터가 자동으로 분석을 시작합니다. 별도로 해야 할 일은 없습니다. 영상 길이에 따라 수 분~수십 분이 소요됩니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum-green">4</div>
+        <div class="sbody">
+          <h4>결과 파일 확인</h4>
+          <p>분석이 완료되면 같은 장르 폴더 안에 XML 파일 두 개가 생성됩니다.</p>
+          <div class="folder-tree" style="margin-top:10px">
+            <span class="folder">📁 드라마/</span><br>
+            &nbsp;&nbsp;<span class="file">🎬 YBJ_S25_EP01.mp4</span> &nbsp;<span class="dim">← 원본 영상</span><br>
+            &nbsp;&nbsp;<span class="file">📄 YBJ_S25_EP01_adbreaks.xml</span> &nbsp;<span class="dim">← 1차 (실사용)</span><br>
+            &nbsp;&nbsp;<span class="file">📄 YBJ_S25_EP01_adbreaks_all.xml</span> &nbsp;<span class="dim">← 2차 (참고용)</span>
+          </div>
+          <p style="margin-top:10px">Premiere Pro → <b>파일 → 가져오기</b> → XML 선택 → 타임라인에 마커 자동 표시</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="success">
+      <span>✅</span>
+      <span>각 장르 폴더 안의 <b>settings.json</b> 파일에 분석 기준이 저장되어 있습니다. 기준을 바꾸고 싶을 때는 개발팀에 문의하세요.</span>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ── 시트 자동 입력 ── -->
+  <section class="section" id="sheet">
+    <div class="section-title">📋 구글 시트 AD 타임코드 자동 입력</div>
+    <p class="section-sub">Premiere에서 최종 마커를 확정한 뒤, CSV로 내보내면 구글 시트 작업시트의 AD열에 자동으로 타임코드가 입력됩니다.</p>
+
+    <div class="use-steps">
+
+      <div class="use-step">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <h4>Premiere에서 마커 CSV 내보내기</h4>
+          <p>Premiere Pro 마커 패널에서 최종 마커를 확정한 뒤, 마커 패널 메뉴에서 <b>내보내기 → CSV</b>를 선택합니다.</p>
+          <p style="margin-top:6px">저장된 파일 이름은 자동으로 <code style="font-size:12px; background:var(--surface2); padding:1px 5px; border-radius:4px">YBJ_S25_EP01_AdBreakCandidates.csv</code> 형태가 됩니다.</p>
+          <div class="tip" style="margin-top:10px">
+            <span>⚠️</span>
+            <span>파일명에서 <b>_AdBreakCandidates</b> 부분을 지우면 안 됩니다. 시트에서 영상 파일명을 자동으로 찾을 때 이 규칙을 사용합니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <h4>구글 시트에서 메뉴 열기</h4>
+          <p>작업시트가 있는 구글 스프레드시트를 열고, 상단 메뉴에서 <b>🎬 AD 마커 → 📥 CSV에서 가져오기</b>를 클릭합니다.</p>
+          <div class="info" style="margin-top:10px">
+            <span>ℹ️</span>
+            <span>메뉴가 보이지 않으면 스프레드시트를 새로고침(F5)해 보세요. 처음 열 때 메뉴가 로딩되는 데 몇 초 걸릴 수 있습니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <h4>CSV 파일 선택 후 가져오기</h4>
+          <p>팝업 창이 열리면 <b>파일 선택</b> 버튼을 눌러 1단계에서 내보낸 CSV 파일을 선택합니다. 여러 파일을 한 번에 선택할 수 있습니다.</p>
+          <p style="margin-top:6px"><b>가져오기</b> 버튼을 누르면 파일명을 기준으로 작업시트 C열을 검색해 해당 행의 <b>F열(AD)</b>에 타임코드가 자동으로 입력됩니다.</p>
+        </div>
+      </div>
+
+      <div class="use-step">
+        <div class="snum">4</div>
+        <div class="sbody">
+          <h4>결과 확인</h4>
+          <p>완료 메시지에서 성공/실패 여부를 확인합니다. 입력된 타임코드는 방송 허용 프레임 기준으로 자동 변환됩니다.</p>
+          <div class="card" style="margin-top:10px; background:var(--surface2);">
+            <h3 style="font-size:13px;">타임코드 변환 규칙</h3>
+            <p style="margin-top:4px">프레임 :00~:03 → 초 버림 (예: 00:09:09:03 → <b>00:09:09</b>)</p>
+            <p>프레임 :28~:29 → 초 올림 (예: 00:09:09:28 → <b>00:09:10</b>)</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="success">
+      <span>✅</span>
+      <span>한 번에 에피소드 여러 개의 CSV를 선택해도 됩니다. 각 파일명에 맞는 행을 자동으로 찾아서 입력합니다.</span>
+    </div>
   </section>
 
 </div>
