@@ -120,6 +120,7 @@ def process_video(video_path):
     stem = os.path.splitext(os.path.basename(video_path))[0]
     folder = os.path.dirname(video_path)
     primary_out = os.path.join(folder, f"{stem}_adbreaks.xml")
+    all_out = os.path.join(folder, f"{stem}_adbreaks_all.xml")
 
     print(f"\n[분석 시작] {stem}", flush=True)
     print("  파일 안정화 대기 중 (다운로드 완료 확인)...", flush=True)
@@ -154,9 +155,14 @@ def process_video(video_path):
         )
         with open(primary_out, "w", encoding="utf-8") as f:
             f.write(report["xml_primary"])
+        # 2차(전체 컷앵커 후보)도 출력 — 편집자가 더 많은 후보에서 고를 수 있게.
+        with open(all_out, "w", encoding="utf-8") as f:
+            f.write(report["xml_all"])
         n_primary = report.get("primary_count", "?")
-        print(f"  ✓ 완료 — 광고 {n_primary}개", flush=True)
+        n_all = sum(1 for m in report.get("markers", []) if m.get("cut_anchor"))
+        print(f"  ✓ 완료 — 1차 {n_primary}개 / 전체(2차) {n_all}개", flush=True)
         print(f"    → {primary_out}", flush=True)
+        print(f"    → {all_out}", flush=True)
     except Exception as e:
         print(f"  ✗ 오류: {e}", flush=True)
 
