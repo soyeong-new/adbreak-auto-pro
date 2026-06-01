@@ -97,7 +97,7 @@
     "w_scene": 4, "w_topic_change": 7, "silence_min": 0.5, "w_fade": 3,
     "fade_require_silence": true, "fade_silence_bonus": 0, "clip_threshold": 0.85,
     "_검증상태": {
-      "clip_threshold": "측정 기반 — JCN(자취남) 30편: 0.80→0.85로 2차 마커 5→11개, 정답 재현 25%→41%. 같은 집 안 약한 컷(0.80~0.85)이 광고점이라 완화."
+      "clip_threshold": "측정 기반 — JCN(자취남) 30편, production 설정(genres.json 가중치 적용): 0.80→0.85로 정답 재현 31%→46%(+15pp), 컷앵커 마커 편당 5→11개. 같은 집 안 약한 컷(0.80~0.85)이 광고점이라 완화. (eval/measure_recall.py 자취남 --set clip_threshold=0.80 으로 재현)"
     }
   }
 ]

@@ -19,7 +19,7 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 - **허용 프레임**: 30fps 기준 :00/:01/:02/:03/:28/:29 만 허용. 스냅 없음.
 - **XML 자동 저장 없음**: 분석 완료 후 파일을 자동으로 디스크에 쓰지 않음. UI 다운로드 버튼으로만 저장.
-- **CLIP 임계값**: 기본 `SAME_THRESHOLD = 0.80` (scene_verify.py). 유사도 < 0.80 = 진짜 장면 전환. 장르별 `clip_threshold`로 override (자취남=0.85 — 같은 집 안 약한 컷도 광고점, 측정: 2차 마커 5→11개·재현 25%→41%).
+- **CLIP 임계값**: 기본 `SAME_THRESHOLD = 0.80` (scene_verify.py). 유사도 < 0.80 = 진짜 장면 전환. 장르별 `clip_threshold`로 override (자취남=0.85 — 같은 집 안 약한 컷도 광고점, 측정[production 설정]: 컷앵커 마커 편당 5→11개·재현 31%→46%, `eval/measure_recall.py`로 재현).
 - **텍스트 유사도 임계값**: `TEXT_SIM_THRESHOLD = 0.75` (local_breaks.py). 미만이면 주제 전환 +4.0점.
 
 ## 파일 구조 및 역할
