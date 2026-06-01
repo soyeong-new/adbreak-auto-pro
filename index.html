@@ -54,12 +54,6 @@
   textarea:focus { outline:none; border-color:var(--accent); border-style:solid; background:#fff; }
   textarea::placeholder { color:var(--faint); }
 
-  .root-row { display:flex; align-items:center; gap:10px; margin-top:14px;
-              background:var(--line-soft); border-radius:10px; padding:10px 14px; }
-  .root-label { font-size:13px; color:var(--muted); white-space:nowrap; font-weight:600; }
-  .root-input { flex:1; background:#fff; border:1px solid var(--line); color:var(--text);
-                padding:8px 12px; border-radius:8px; font-size:13px; font-family:inherit; }
-  .root-input:focus { outline:none; border-color:var(--accent); }
 
   /* ── 장르 카드 ── */
   .genre-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
@@ -217,11 +211,6 @@
 직접 입력도 가능합니다:
 /Volumes/AIPP22/슈카월드/SKA_S01_EP31_HD_KR.mp4
 폴더 경로도 가능:  /Volumes/AIPP22/유병재/S30/"></textarea>
-
-    <div class="root-row">
-      <span class="root-label">📁 기본 폴더 (선택)</span>
-      <input class="root-input" id="root" placeholder="파일명만 넣었을 때 이 폴더에서 찾습니다 — 예: /Volumes/AIPP22">
-    </div>
   </div>
 
   <!-- STEP 2 : 장르 -->
@@ -416,7 +405,6 @@ async function analyze(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         video_paths: paths,
-        root: $('root').value.trim(),
         settings:{
           first_min:      parseFloat($('fmin').value),
           first_max:      parseFloat($('fmax').value),
