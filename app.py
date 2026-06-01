@@ -49,6 +49,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(f.read())
             return
 
+        if self.path == "/genres.json":
+            # 장르 프리셋 단일 소스 — UI가 fetch로 읽어 PRESETS 구성.
+            path = os.path.join(os.getcwd(), "genres.json")
+            if not os.path.exists(path):
+                self.send_response(404)
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            with open(path, "rb") as f:
+                self.wfile.write(f.read())
+            return
+
         if self.path == "/api/pick-files":
             # macOS Finder 파일 선택 창 — osascript로 전체 경로 반환
             import subprocess
@@ -107,13 +122,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 settings[key] = float(val) * 60.0
 
         # 장르 가중치 — 분 변환 없이 그대로 사용
-        for key in ("w_scene", "w_topic_change", "p_cta"):
+        for key in ("w_scene", "w_topic_change", "w_fade", "fade_silence_bonus"):
             val = data.get("settings", {}).get(key)
             if val is not None:
                 settings[key] = float(val)
         val = data.get("settings", {}).get("silence_min")
         if val is not None:
             settings["silence_min"] = float(val)
+        # 페이드 침묵 관문 여부 (bool)
+        val = data.get("settings", {}).get("fade_require_silence")
+        if val is not None:
+            settings["fade_require_silence"] = bool(val)
 
         # A path may be an absolute file/folder, or a bare filename dragged in;
         # bare filenames are resolved by searching the base folder ('root').

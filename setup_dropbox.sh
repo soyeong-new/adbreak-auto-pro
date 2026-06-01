@@ -1,240 +1,58 @@
 #!/bin/bash
 # Drop Box 안에 장르별 폴더와 settings.json을 생성합니다.
 # 실행: bash setup_dropbox.sh
+#
+# 장르 설정은 genres.json 에서 읽습니다. 수정은 genres.json 만 건드리세요.
 
 BASE="/Volumes/guest1/Public/Drop Box"
+GENRES_JSON="$(dirname "$0")/genres.json"
 
-# ── 영화 ───────────────────────────────────────────
-mkdir -p "$BASE/영화"
-cat > "$BASE/영화/settings.json" << 'EOF'
-{
-  "__장르": "영화",
-  "__설명": "장면 전환과 페이드 인/아웃이 많은 영상. 화면 전환 신호를 가장 중요하게 봅니다.",
+if [ ! -f "$GENRES_JSON" ]; then
+  echo "오류: genres.json 을 찾을 수 없습니다 ($GENRES_JSON)"
+  exit 1
+fi
 
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
+python3 - "$BASE" "$GENRES_JSON" << 'PYEOF'
+import json, os, sys
 
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 8,
-  "w_topic_change" : 2,
-  "silence_min"    : 0.5,
-  "p_cta"          : 3
+base = sys.argv[1]
+genres = json.loads(open(sys.argv[2]).read())
+
+PARAM_GUIDE = {
+  "first_min"      : "첫 광고 삽입 최소 시간 (분)",
+  "first_max"      : "첫 광고 삽입 최대 시간 (분)",
+  "gap_min"        : "광고 간 최소 간격 (분)",
+  "gap_max"        : "광고 간 최대 간격 (분)",
+  "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
+  "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
+  "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
+  "w_fade"         : "페이드 인/아웃 가중치 (0~10, 높을수록 암전 지점 우선)",
+  "fade_require_silence" : "페이드 마커에 침묵을 필수로 요구할지 (영화·드라마·케이팝=false, 배경음 지속 장르)",
+  "fade_silence_bonus"   : "페이드에 침묵이 동반될 때 가산점 (케이팝만 >0)",
 }
-EOF
 
-# ── 드라마 ─────────────────────────────────────────
-mkdir -p "$BASE/드라마"
-cat > "$BASE/드라마/settings.json" << 'EOF'
-{
-  "__장르": "드라마",
-  "__설명": "장면 전환이 많고 대화 흐름도 중요한 영상. 화면 전환과 주제 변화를 균형 있게 봅니다.",
+for g in genres:
+    folder = os.path.join(base, g["folder"])
+    os.makedirs(folder, exist_ok=True)
+    settings = {
+        "__장르": g["label"],
+        "__설명": g["folder_desc"],
+        "__파라미터_안내": PARAM_GUIDE,
+        "first_min"      : g["first_min"],
+        "first_max"      : g["first_max"],
+        "gap_min"        : g["gap_min"],
+        "gap_max"        : g["gap_max"],
+        "w_scene"        : g["w_scene"],
+        "w_topic_change" : g["w_topic_change"],
+        "silence_min"    : g["silence_min"],
+        "w_fade"         : g["w_fade"],
+        "fade_require_silence" : g["fade_require_silence"],
+        "fade_silence_bonus"   : g["fade_silence_bonus"],
+    }
+    out = os.path.join(folder, "settings.json")
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(settings, f, ensure_ascii=False, indent=2)
+    print(f"  ✓ {g['folder']}/settings.json")
 
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 7,
-  "w_topic_change" : 3,
-  "silence_min"    : 0.5,
-  "p_cta"          : 3
-}
-EOF
-
-# ── 푸드 ───────────────────────────────────────────
-mkdir -p "$BASE/푸드"
-cat > "$BASE/푸드/settings.json" << 'EOF'
-{
-  "__장르": "푸드",
-  "__설명": "요리 시연과 토크가 섞인 영상. 장면 전환과 주제 변화를 함께 봅니다.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 6,
-  "w_topic_change" : 4,
-  "silence_min"    : 0.4,
-  "p_cta"          : 4
-}
-EOF
-
-# ── 케이팝 ─────────────────────────────────────────
-mkdir -p "$BASE/케이팝"
-cat > "$BASE/케이팝/settings.json" << 'EOF'
-{
-  "__장르": "케이팝",
-  "__설명": "무대 전환 중심의 음악 영상. 화면 전환을 우선하고 주제 변화는 거의 보지 않습니다.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 7,
-  "w_topic_change" : 0,
-  "silence_min"    : 0.5,
-  "p_cta"          : 1
-}
-EOF
-
-# ── 토크예능 ───────────────────────────────────────
-mkdir -p "$BASE/토크예능"
-cat > "$BASE/토크예능/settings.json" << 'EOF'
-{
-  "__장르": "토크예능",
-  "__설명": "발화 흐름과 장면 전환을 균형 있게 봅니다. 짧은 침묵도 감지해 후보를 넓게 잡습니다.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 6,
-  "w_topic_change" : 4,
-  "silence_min"    : 0.3,
-  "p_cta"          : 3
-}
-EOF
-
-# ── 강의정보 ───────────────────────────────────────
-mkdir -p "$BASE/강의정보"
-cat > "$BASE/강의정보/settings.json" << 'EOF'
-{
-  "__장르": "강의정보",
-  "__설명": "주제 전환 챕터 구분에 최적화. 내용이 바뀌는 지점을 가장 중요하게 봅니다.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 3,
-  "w_topic_change" : 8,
-  "silence_min"    : 0.3,
-  "p_cta"          : 5
-}
-EOF
-
-# ── 여행 ───────────────────────────────────────────
-mkdir -p "$BASE/여행"
-cat > "$BASE/여행/settings.json" << 'EOF'
-{
-  "__장르": "여행 브이로그",
-  "__설명": "컷 전환과 침묵이 모두 많은 영상. 컷과 침묵이 동시에 겹치는 지점만 골라냅니다.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 10,
-  "gap_max"        : 15,
-  "w_scene"        : 8,
-  "w_topic_change" : 0,
-  "silence_min"    : 0.7,
-  "p_cta"          : 6
-}
-EOF
-
-# ── 자취남 ─────────────────────────────────────────
-mkdir -p "$BASE/자취남"
-cat > "$BASE/자취남/settings.json" << 'EOF'
-{
-  "__장르": "자취남",
-  "__설명": "일상 라이프스타일 브이로그. 요리·식사·생활 루틴 등 주제가 짧게 바뀌는 구조. 주제 전환 중심으로 감지.",
-
-  "__파라미터_안내": {
-    "first_min"      : "첫 광고 삽입 최소 시간 (분)",
-    "first_max"      : "첫 광고 삽입 최대 시간 (분)",
-    "gap_min"        : "광고 간 최소 간격 (분)",
-    "gap_max"        : "광고 간 최대 간격 (분)",
-    "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
-    "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
-    "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
-    "p_cta"          : "홍보 멘트 패널티 (0~8, 높을수록 구독/좋아요 구간 회피)"
-  },
-
-  "first_min"      : 3,
-  "first_max"      : 10,
-  "gap_min"        : 8,
-  "gap_max"        : 13,
-  "w_scene"        : 4,
-  "w_topic_change" : 7,
-  "silence_min"    : 0.5,
-  "p_cta"          : 4
-}
-EOF
-
-echo "✅ 완료 — 장르 폴더 8개 + settings.json 생성됨"
-ls "$BASE"
+print(f"\n✅ 완료 — {len(genres)}개 장르 폴더 + settings.json 생성됨")
+PYEOF

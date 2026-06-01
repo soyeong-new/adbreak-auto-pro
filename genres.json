@@ -1,0 +1,100 @@
+[
+  {
+    "id": "movie",
+    "label": "영화",
+    "icon": "🎬",
+    "ui_desc": "극영화 · 다큐\n컷 중심 편집",
+    "folder": "영화",
+    "folder_desc": "장면 전환과 페이드 인/아웃이 많은 영상. 화면 전환 신호를 가장 중요하게 봅니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 8, "w_topic_change": 2, "silence_min": 0.5, "w_fade": 8,
+    "fade_require_silence": false, "fade_silence_bonus": 0,
+    "_검증상태": {
+      "fade_require_silence": "임시 — KTA(영화) 1편 관찰(페이드 13개 중 12개 배경음 지속), 추가 데이터 필요"
+    }
+  },
+  {
+    "id": "drama",
+    "label": "드라마",
+    "icon": "📺",
+    "ui_desc": "장면 전환 · 대화\n균형 편집",
+    "folder": "드라마",
+    "folder_desc": "장면 전환이 많고 대화 흐름도 중요한 영상. 화면 전환과 주제 변화를 균형 있게 봅니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 7, "w_topic_change": 3, "silence_min": 0.5, "w_fade": 6,
+    "fade_require_silence": false, "fade_silence_bonus": 0,
+    "_검증상태": {
+      "fade_require_silence": "임시 — 추정(데이터 없음), 영화에 준해 false"
+    }
+  },
+  {
+    "id": "food",
+    "label": "푸드",
+    "icon": "🍽️",
+    "ui_desc": "요리 시연\n토크 혼합",
+    "folder": "푸드",
+    "folder_desc": "요리 시연과 토크가 섞인 영상. 장면 전환과 주제 변화를 함께 봅니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 6, "w_topic_change": 4, "silence_min": 0.4, "w_fade": 3,
+    "fade_require_silence": true, "fade_silence_bonus": 0
+  },
+  {
+    "id": "kpop",
+    "label": "케이팝",
+    "icon": "🎵",
+    "ui_desc": "뮤직비디오\n무대 · 공연",
+    "folder": "케이팝",
+    "folder_desc": "무대 전환 중심의 음악 영상. 화면 전환을 우선하고 주제 변화는 거의 보지 않습니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 7, "w_topic_change": 0, "silence_min": 0.5, "w_fade": 6,
+    "fade_require_silence": false, "fade_silence_bonus": 2.0,
+    "_검증상태": {
+      "fade_require_silence": "임시 — 미측정",
+      "fade_silence_bonus": "임시 — 미측정. 다른 가수 등장 시 페이드인+침묵 가정"
+    }
+  },
+  {
+    "id": "talk",
+    "label": "토크예능",
+    "icon": "🎙",
+    "ui_desc": "퀴즈쇼 · 예능\n토크쇼",
+    "folder": "토크예능",
+    "folder_desc": "발화 흐름과 장면 전환을 균형 있게 봅니다. 짧은 침묵도 감지해 후보를 넓게 잡습니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 6, "w_topic_change": 4, "silence_min": 0.3, "w_fade": 2,
+    "fade_require_silence": true, "fade_silence_bonus": 0
+  },
+  {
+    "id": "lecture",
+    "label": "강의정보",
+    "icon": "📚",
+    "ui_desc": "교육 · 설명\n정보 채널",
+    "folder": "강의정보",
+    "folder_desc": "주제 전환 챕터 구분에 최적화. 내용이 바뀌는 지점을 가장 중요하게 봅니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 3, "w_topic_change": 8, "silence_min": 0.3, "w_fade": 1,
+    "fade_require_silence": true, "fade_silence_bonus": 0
+  },
+  {
+    "id": "travel",
+    "label": "여행",
+    "icon": "✈️",
+    "ui_desc": "여행 브이로그\n컷 · 풍경",
+    "folder": "여행",
+    "folder_desc": "컷 전환과 침묵이 모두 많은 영상. 컷과 침묵이 동시에 겹치는 지점만 골라냅니다.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 8, "w_topic_change": 0, "silence_min": 0.7, "w_fade": 5,
+    "fade_require_silence": true, "fade_silence_bonus": 0
+  },
+  {
+    "id": "home",
+    "label": "자취남",
+    "icon": "🏠",
+    "ui_desc": "일상 브이로그\n요리 · 생활",
+    "folder": "자취남",
+    "folder_desc": "일상 라이프스타일 브이로그. 요리·식사·생활 루틴 등 주제가 짧게 바뀌는 구조. 주제 전환 중심으로 감지.",
+    "first_min": 3, "first_max": 10, "gap_min": 10, "gap_max": 15,
+    "w_scene": 4, "w_topic_change": 7, "silence_min": 0.5, "w_fade": 3,
+    "fade_require_silence": true, "fade_silence_bonus": 0
+  }
+]

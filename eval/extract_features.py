@@ -1,34 +1,34 @@
-"""Extract a feature matrix from existing marker XMLs + ground-truth JSON.
+"""기존 마커 XML + 정답 JSON에서 피처 행렬 추출 (extract_features.py)
 
-For each ad-break candidate marker in *_adbreaks_all.xml (falling back to
-*_adbreaks.xml when _all is absent), parse the <comment> field with regex and
-produce a row with 16 features + 1 label.
+*_adbreaks_all.xml (없으면 *_adbreaks.xml)의 광고 삽입 후보 마커마다
+<comment> 필드를 정규식으로 파싱해 16개 피처 + 레이블 1개로 구성된 행을 생성합니다.
+영상 재분석 없이 XML만 읽어 피처를 뽑습니다.
 
-Features (all parsed from XML — no video re-analysis needed):
-  score          float  composite score from _score()
-  has_cut        bool   "[검증전환]" in <name> → scene cut confirmed by CLIP
-  scene_cut_det  bool   "장면 컷에서 시작" in comment (detected, may be CLIP-rejected)
-  clip_not_cut   bool   "장면 전환 아님" → CLIP rejected the cut
-  clip_passed    bool   "CLIP 검수 통과" → CLIP confirmed the cut
-  clip_sim       float  CLIP similarity value (NaN if absent)
-  cut_dist       float  seconds to nearest scene cut (NaN if none)
-  silence_db     float  silence dB drop (negative, e.g. -30.0; NaN if absent)
-  long_silence   bool   "긴 침묵" → silence_len >= LONG_SILENCE threshold
+피처 목록:
+  score          float  _score()의 종합 점수
+  has_cut        bool   "[검증전환]"이 <name>에 포함 → CLIP이 장면 전환 확인
+  scene_cut_det  bool   댓글에 "장면 컷에서 시작" 포함 (CLIP 거부 가능성 있음)
+  clip_not_cut   bool   "장면 전환 아님" → CLIP이 컷 거부
+  clip_passed    bool   "CLIP 검수 통과" → CLIP이 컷 확인
+  clip_sim       float  CLIP 유사도 값 (없으면 NaN)
+  cut_dist       float  가장 가까운 장면 컷까지의 거리(초) (없으면 NaN)
+  silence_db     float  침묵 dB 낙폭 (음수, 예: -30.0; 없으면 NaN)
+  long_silence   bool   "긴 침묵" → silence_len >= LONG_SILENCE 임계값
   frame_00       bool   "최우선 :00 프레임"
   strong_opener  bool   "화제 전환 표현으로 시작"
-  weak_opener    bool   "전환 표현으로 시작" (but NOT 화제-전환)
+  weak_opener    bool   "전환 표현으로 시작" (화제-전환은 아님)
   closer         bool   "마무리 표현으로 종료"
   short_prev     bool   "너무 짧음(조각)"
   qa             bool   "질문(자문자답"
   continuation   bool   "발화 지속 표현"
   cta            bool   "CTA/홍보 키워드"
 
-Label:
-  label          int    1 if marker time is within TOL seconds of a GT time, else 0
+레이블:
+  label          int    마커 시간이 정답 시간 ±TOL초 이내면 1, 아니면 0
 
-Output:
-  eval/output/features.json   — list of row dicts (human-readable)
-  eval/output/features.csv    — CSV for direct use with pandas / sklearn
+출력:
+  eval/output/features.json   — 행 딕셔너리 목록 (사람이 읽기 좋은 형식)
+  eval/output/features.csv    — pandas / sklearn 직접 사용 가능한 CSV
 """
 from __future__ import annotations
 

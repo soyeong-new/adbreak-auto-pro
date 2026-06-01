@@ -7,146 +7,183 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
-    --bg:#0f1420; --panel:#1a2233; --line:#2b3650; --text:#e8ecf4;
-    --muted:#8b97ad; --accent:#5b8cff; --cut:#ffb454; --ok:#3ddc97; --warn:#ff6b6b;
+    --bg:#eef2f9; --card:#ffffff; --line:#e2e7f0; --line-soft:#eef1f7;
+    --text:#1f2a3d; --muted:#6b7790; --faint:#9aa6bd;
+    --accent:#3b6fe0; --accent-dk:#2b5bc4; --accent-soft:#eaf0fe;
+    --ok:#13a06a; --ok-soft:#e6f6ef; --cut:#d9821a; --cut-soft:#fdf2e2;
+    --warn:#d83a3a; --warn-soft:#fdeaea;
+    --shadow:0 1px 2px rgba(31,42,61,.04), 0 6px 20px rgba(31,42,61,.06);
   }
-  * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; }
-  body { background:var(--bg); color:var(--text); padding:40px 20px; line-height:1.5; }
-  .wrap { max-width:860px; margin:0 auto; }
+  * { box-sizing:border-box; margin:0; padding:0;
+      font-family:-apple-system,"Apple SD Gothic Neo","Segoe UI",Roboto,"Noto Sans KR",sans-serif; }
+  body { background:var(--bg); color:var(--text); padding:48px 20px 80px; line-height:1.6;
+         -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:780px; margin:0 auto; }
 
   /* ── 헤더 ── */
-  .hdr { margin-bottom:36px; }
-  .hdr h1 { font-size:22px; font-weight:700; margin-bottom:6px; }
-  .hdr p  { font-size:14px; color:var(--muted); }
+  .hdr { text-align:center; margin-bottom:40px; }
+  .hdr .logo { font-size:40px; margin-bottom:10px; }
+  .hdr h1 { font-size:26px; font-weight:800; letter-spacing:-.02em; margin-bottom:8px; }
+  .hdr p  { font-size:15px; color:var(--muted); max-width:520px; margin:0 auto; }
 
-  /* ── 스텝 ── */
-  .step { margin-bottom:20px; }
-  .step-hd { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-  .step-n  { width:30px; height:30px; background:var(--accent); border-radius:50%;
+  /* ── 스텝 카드 ── */
+  .step { background:var(--card); border:1px solid var(--line); border-radius:18px;
+          padding:26px 28px; margin-bottom:18px; box-shadow:var(--shadow); }
+  .step-hd { display:flex; align-items:flex-start; gap:14px; margin-bottom:18px; }
+  .step-n  { width:32px; height:32px; background:var(--accent); border-radius:50%;
              display:flex; align-items:center; justify-content:center;
-             font-size:13px; font-weight:800; color:#fff; flex-shrink:0; }
+             font-size:15px; font-weight:800; color:#fff; flex-shrink:0; }
   .step-n.done { background:var(--ok); }
-  .step-ttl { font-size:15px; font-weight:700; }
-  .step-sub { font-size:12px; color:var(--muted); margin-top:2px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .step-ttl { font-size:17px; font-weight:700; }
+  .step-sub { font-size:13.5px; color:var(--muted); margin-top:3px; }
 
   /* ── 파일 입력 ── */
-  .root-row { display:flex; align-items:center; gap:8px; margin-top:10px; }
-  .root-label { font-size:12px; color:var(--muted); white-space:nowrap; }
-  .root-input { flex:1; background:var(--bg); border:1px solid var(--line); color:var(--muted);
-                padding:7px 10px; border-radius:7px; font-size:12px; font-family:inherit; }
-  textarea { width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
-             padding:10px 12px; border-radius:8px; font-size:13px; font-family:inherit; resize:vertical; }
+  .file-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .btn { border:0; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+         padding:11px 18px; display:inline-flex; align-items:center; gap:7px;
+         transition:all .15s; white-space:nowrap; }
+  .btn-primary  { background:var(--accent); color:#fff; }
+  .btn-primary:hover  { background:var(--accent-dk); }
+  .btn-ghost    { background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .hint { font-size:13px; color:var(--faint); }
+
+  textarea { width:100%; background:#fafbfd; border:1.5px dashed var(--line); color:var(--text);
+             padding:14px 16px; border-radius:12px; font-size:13.5px; font-family:inherit;
+             resize:vertical; transition:border-color .15s; }
+  textarea:focus { outline:none; border-color:var(--accent); border-style:solid; background:#fff; }
+  textarea::placeholder { color:var(--faint); }
+
+  .root-row { display:flex; align-items:center; gap:10px; margin-top:14px;
+              background:var(--line-soft); border-radius:10px; padding:10px 14px; }
+  .root-label { font-size:13px; color:var(--muted); white-space:nowrap; font-weight:600; }
+  .root-input { flex:1; background:#fff; border:1px solid var(--line); color:var(--text);
+                padding:8px 12px; border-radius:8px; font-size:13px; font-family:inherit; }
+  .root-input:focus { outline:none; border-color:var(--accent); }
 
   /* ── 장르 카드 ── */
-  .genre-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  .genre-card { border:2px solid var(--line); border-radius:12px; padding:18px 12px 14px;
-                cursor:pointer; text-align:center; transition:all .15s; user-select:none; }
-  .genre-card:hover { border-color:var(--accent); }
-  .genre-card.active { border-color:var(--accent); background:rgba(91,140,255,.1); }
-  .g-icon { font-size:28px; margin-bottom:8px; }
-  .g-name { font-size:13px; font-weight:700; margin-bottom:4px; }
-  .g-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+  .genre-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:620px){ .genre-grid { grid-template-columns:repeat(2,1fr); } }
+  .genre-card { border:2px solid var(--line); border-radius:14px; padding:18px 10px 14px;
+                cursor:pointer; text-align:center; transition:all .15s; user-select:none;
+                background:#fff; }
+  .genre-card:hover { border-color:var(--accent); transform:translateY(-2px);
+                      box-shadow:0 6px 16px rgba(59,111,224,.12); }
+  .genre-card.active { border-color:var(--accent); background:var(--accent-soft); }
+  .g-icon { font-size:30px; margin-bottom:8px; line-height:1; }
+  .g-name { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .g-desc { font-size:11.5px; color:var(--muted); line-height:1.4; }
 
-  /* ── 세부 조정 토글 ── */
-  .adv-toggle { display:flex; align-items:center; gap:7px; margin-top:18px; cursor:pointer;
-                color:var(--muted); font-size:13px; user-select:none; }
-  .adv-toggle:hover { color:var(--text); }
-  .adv-body { display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:16px; }
+  /* ── 세부 조정 ── */
+  .adv-toggle { display:inline-flex; align-items:center; gap:7px; margin-top:22px; cursor:pointer;
+                color:var(--accent); font-size:13.5px; font-weight:600; user-select:none; }
+  .adv-toggle:hover { color:var(--accent-dk); }
+  .adv-body { display:none; margin-top:18px; border-top:1px solid var(--line); padding-top:22px; }
   .adv-body.open { display:block; }
-  .w-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .w-item label { font-size:12px; color:var(--muted); margin-bottom:3px; display:block; }
-  .w-desc { font-size:11px; color:var(--muted); line-height:1.4; margin-bottom:7px; }
-  .sl-row { display:flex; align-items:center; gap:10px; }
-  .sl-row input[type=range] { flex:1; accent-color:var(--accent); cursor:pointer; }
-  .sl-val { min-width:36px; text-align:right; font-size:13px; font-weight:700; color:var(--accent); }
-  .t-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:12px; }
-  .t-lbl { font-size:11px; color:var(--muted); margin-bottom:4px; }
-  .t-grid input { width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text);
-                  padding:9px 10px; border-radius:8px; font-size:14px; }
+  .w-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px 24px; }
+  @media (max-width:560px){ .w-grid { grid-template-columns:1fr; } }
+  .w-item label { font-size:13.5px; font-weight:700; color:var(--text); margin-bottom:3px; display:block; }
+  .w-desc { font-size:12px; color:var(--muted); line-height:1.45; margin-bottom:9px; }
+  .sl-row { display:flex; align-items:center; gap:12px; }
+  .sl-row input[type=range] { flex:1; accent-color:var(--accent); cursor:pointer; height:5px; }
+  .sl-val { min-width:42px; text-align:center; font-size:13.5px; font-weight:700; color:var(--accent);
+            background:var(--accent-soft); border-radius:7px; padding:3px 0; }
+
+  .gap-section { margin-top:24px; background:var(--line-soft); border-radius:12px; padding:18px 20px; }
+  .gap-title { font-size:13.5px; font-weight:700; margin-bottom:4px; }
+  .gap-sub { font-size:12px; color:var(--muted); margin-bottom:14px; }
+  .t-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:560px){ .t-grid { grid-template-columns:repeat(2,1fr); } }
+  .t-lbl { font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:600; }
+  .t-grid input { width:100%; background:#fff; border:1px solid var(--line); color:var(--text);
+                  padding:10px 12px; border-radius:9px; font-size:15px; font-weight:600; }
+  .t-grid input:focus { outline:none; border-color:var(--accent); }
 
   /* ── 분석 버튼 ── */
-  .go-btn { width:100%; background:var(--accent); color:#fff; border:0; padding:16px;
-            border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;
-            margin-top:20px; transition:opacity .15s; }
-  .go-btn:disabled { opacity:.4; cursor:default; }
+  .go-btn { width:100%; background:var(--accent); color:#fff; border:0; padding:18px;
+            border-radius:14px; font-size:17px; font-weight:800; cursor:pointer;
+            margin-top:6px; box-shadow:0 6px 18px rgba(59,111,224,.28); transition:all .15s; }
+  .go-btn:hover:not(:disabled) { background:var(--accent-dk); transform:translateY(-1px); }
+  .go-btn:disabled { opacity:.45; cursor:default; box-shadow:none; }
 
   /* ── 상태 ── */
-  .status { font-size:13px; color:var(--muted); display:none; text-align:center; margin-top:16px; }
+  .status { font-size:14px; color:var(--muted); display:none; text-align:center; margin-top:18px;
+            background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
   .status.on { display:block; }
-  .spin { display:inline-block; width:13px; height:13px; border:2px solid var(--line);
+  .spin { display:inline-block; width:14px; height:14px; border:2px solid var(--line);
           border-top-color:var(--accent); border-radius:50%; animation:sp .8s linear infinite;
-          vertical-align:-2px; margin-right:6px; }
+          vertical-align:-2px; margin-right:8px; }
   @keyframes sp { to { transform:rotate(360deg); } }
   .err-msg { color:var(--warn); white-space:pre-wrap; }
 
   /* ── 결과 ── */
-  #result { margin-top:28px; }
-  .res-hd { display:flex; align-items:flex-start; justify-content:space-between;
-            flex-wrap:wrap; gap:12px; margin-bottom:16px; }
-  .res-title { font-size:16px; font-weight:700; }
-  .res-meta  { font-size:12px; color:var(--muted); margin-top:3px; }
-  .dl-group { display:flex; gap:8px; flex-wrap:wrap; }
-  .btn-dl { background:transparent; border:1px solid var(--ok); color:var(--ok);
-            padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600;
-            cursor:pointer; white-space:nowrap; transition:background .15s; text-decoration:none;
-            display:inline-flex; align-items:center; gap:5px; }
-  .btn-dl:hover { background:rgba(61,220,151,.1); }
+  #result { margin-top:30px; }
+  .res-card { background:var(--card); border:1px solid var(--line); border-radius:18px;
+              padding:26px 28px; margin-bottom:18px; box-shadow:var(--shadow); }
+  .res-hd { display:flex; align-items:flex-start; gap:14px; margin-bottom:18px; }
+  .res-ttl { font-size:16px; font-weight:700; word-break:break-all; }
+  .res-meta { font-size:13px; color:var(--muted); margin-top:3px; }
+
+  .dl-group { display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-dl { background:var(--ok-soft); border:1px solid transparent; color:var(--ok);
+            padding:11px 18px; border-radius:10px; font-size:13.5px; font-weight:700;
+            cursor:pointer; white-space:nowrap; transition:all .15s; text-decoration:none;
+            display:inline-flex; align-items:center; gap:6px; }
+  .btn-dl:hover { background:#d7f0e4; }
+  .btn-dl.alt { background:var(--accent-soft); color:var(--accent); }
+  .btn-dl.alt:hover { background:#dce8fe; }
 
   /* ── 광고 슬롯 ── */
-  .slot-wrap  { margin-bottom:20px; }
-  .slot-label { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.06em;
-                text-transform:uppercase; margin-bottom:8px; }
-  .slot-card  { background:var(--bg); border:1px solid var(--line); border-radius:12px;
+  .slot-wrap  { margin-bottom:18px; }
+  .slot-label { font-size:12px; font-weight:800; color:var(--accent); letter-spacing:.04em;
+                margin-bottom:9px; }
+  .slot-card  { background:#fff; border:1px solid var(--line); border-radius:14px;
                 overflow:hidden; margin-bottom:8px; }
-  .slot-card.rec { border-color:var(--accent); background:rgba(91,140,255,.04); }
-  .slot-main  { display:flex; align-items:center; gap:14px; padding:16px 18px; }
-  .slot-kind  { font-size:11px; font-weight:700; color:var(--muted); min-width:28px; text-align:center; }
+  .slot-card.rec { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .slot-main  { display:flex; align-items:center; gap:14px; padding:16px 18px; flex-wrap:wrap; }
   .slot-tc    { font-family:"SF Mono","JetBrains Mono","Courier New",monospace;
-                font-size:22px; font-weight:700; letter-spacing:.02em; }
+                font-size:23px; font-weight:800; letter-spacing:.01em; color:var(--text); }
   .slot-tags  { display:flex; gap:6px; flex-wrap:wrap; flex:1; }
-  .tag { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
+  .tag { font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
   .t-rec  { background:var(--accent); color:#fff; }
-  .t-alt  { background:var(--line); color:var(--muted); }
-  .t-cut  { background:rgba(255,180,84,.15); color:var(--cut);
-            border:1px solid rgba(255,180,84,.25); }
-  .slot-txt { padding:0 18px 14px; border-top:1px solid var(--line);
-              font-size:12px; color:var(--muted); line-height:1.7; }
-  .slot-txt b { color:var(--text); font-weight:400; }
+  .t-alt  { background:var(--line-soft); color:var(--muted); }
+  .t-cut  { background:var(--cut-soft); color:var(--cut); }
+  .slot-txt { padding:0 18px 14px; border-top:1px solid var(--line-soft);
+              font-size:12.5px; color:var(--muted); line-height:1.7; padding-top:10px; }
+  .slot-txt b { color:var(--text); font-weight:600; }
 
-  /* 대안 토글 */
-  .alt-tog  { display:flex; align-items:center; gap:6px; padding:10px 18px;
-              background:rgba(255,255,255,.02); border-top:1px solid var(--line);
-              cursor:pointer; color:var(--muted); font-size:12px; }
-  .alt-tog:hover { color:var(--text); }
+  .alt-tog  { display:flex; align-items:center; gap:6px; padding:11px 18px;
+              background:#fafbfd; border-top:1px solid var(--line-soft);
+              cursor:pointer; color:var(--muted); font-size:12.5px; font-weight:600; }
+  .alt-tog:hover { color:var(--accent); }
   .alt-body { display:none; }
   .alt-body.open { display:block; }
   .alt-row  { display:flex; align-items:center; gap:12px; padding:11px 18px;
-              border-top:1px solid var(--line); font-size:13px; }
+              border-top:1px solid var(--line-soft); font-size:13px; }
   .alt-tc   { font-family:"SF Mono","JetBrains Mono",monospace; font-size:14px;
               font-weight:700; min-width:90px; }
   .alt-info { font-size:12px; color:var(--muted); flex:1;
               overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-  /* 2차 전체 */
-  .btn-2nd { background:transparent; border:1px solid var(--line); color:var(--muted);
-             padding:8px 14px; border-radius:8px; font-size:12px; cursor:pointer;
-             margin-top:8px; }
-  .btn-2nd:hover { border-color:var(--accent); color:var(--text); }
-  .all-wrap { display:none; margin-top:12px; }
+  .btn-2nd { background:#fff; border:1px solid var(--line); color:var(--muted);
+             padding:10px 16px; border-radius:10px; font-size:12.5px; font-weight:600;
+             cursor:pointer; margin-top:10px; }
+  .btn-2nd:hover { border-color:var(--accent); color:var(--accent); }
+  .all-wrap { display:none; margin-top:14px; }
   .all-wrap.open { display:block; }
-  .all-label { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.06em;
-               text-transform:uppercase; margin-bottom:8px; }
+  .all-label { font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.04em;
+               margin-bottom:10px; }
 
-  /* fps 경고 */
-  .fps-note { font-size:12px; color:var(--cut); background:rgba(255,180,84,.07);
-              border-radius:8px; padding:10px 14px; margin-bottom:14px; line-height:1.6; }
+  .fps-note { font-size:13px; color:var(--cut); background:var(--cut-soft);
+              border-radius:10px; padding:12px 16px; margin-bottom:16px; line-height:1.6; }
 
-  /* 일괄 다운로드 바 */
-  .bulk-bar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
-              padding:14px 18px; display:flex; align-items:center;
-              justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
-  .bulk-label { font-size:13px; color:var(--muted); }
+  .bulk-bar { background:var(--accent-soft); border:1px solid #d3e0fc; border-radius:14px;
+              padding:16px 20px; display:flex; align-items:center;
+              justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .bulk-label { font-size:14px; color:var(--text); font-weight:700; }
+
+  .detail-tog { display:inline-flex; align-items:center; gap:7px; margin-top:16px; cursor:pointer;
+                color:var(--accent); font-size:13px; font-weight:600; user-select:none; }
 </style>
 </head>
 <body>
@@ -154,8 +191,9 @@
 
   <!-- 헤더 -->
   <div class="hdr">
-    <h1>🎬 중간광고 마커 자동화</h1>
-    <p>영상을 분석해 광고 삽입 최적 지점을 찾고, 프리미어 Pro용 마커 파일로 내보냅니다.</p>
+    <div class="logo">🎬</div>
+    <h1>중간광고 마커 자동화</h1>
+    <p>영상을 분석해 광고를 넣기 좋은 지점을 찾아드립니다. 결과는 프리미어 프로용 마커 파일로 바로 내려받을 수 있어요.</p>
   </div>
 
   <!-- STEP 1 : 영상 파일 -->
@@ -164,31 +202,25 @@
       <div class="step-n" id="sn1">1</div>
       <div>
         <div class="step-ttl">영상 파일 선택</div>
-        <div class="step-sub">파일을 드래그하거나 경로를 붙여넣으세요. 여러 편 한 번에 가능.</div>
+        <div class="step-sub">파일을 끌어다 놓거나 아래 버튼으로 고르세요. 여러 편을 한 번에 넣어도 됩니다.</div>
       </div>
     </div>
-    <div class="card">
-      <div class="root-row" style="margin-top:0; margin-bottom:10px;">
-        <span class="root-label">📁 기본 폴더</span>
-        <input class="root-input" id="root" placeholder="/Volumes/AIPP22  — 파일명만 드래그했을 때 여기서 검색합니다 (선택사항)">
-      </div>
-      <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
-        <button onclick="pickFiles()" style="background:var(--line); border:0; color:var(--text);
-                padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer; white-space:nowrap;">
-          📂 파일 선택
-        </button>
-        <button onclick="ta.value=''" style="background:transparent; border:1px solid var(--line);
-                color:var(--muted); padding:8px 14px; border-radius:8px; font-size:13px;
-                cursor:pointer; white-space:nowrap;">
-          🗑 모두 지우기
-        </button>
-        <span style="font-size:12px; color:var(--muted);">
-          또는 아래 칸에 드래그 · 경로 붙여넣기
-        </span>
-      </div>
-      <textarea id="paths" rows="4" placeholder="여기로 영상 파일을 드래그하면 파일명이 들어옵니다.
-또는 절대경로 직접 입력:  /Volumes/AIPP22/슈카월드/SKA_S01_EP31_HD_KR.mp4
+
+    <div class="file-actions">
+      <button class="btn btn-primary" onclick="pickFiles()">📂 파일 고르기</button>
+      <button class="btn btn-ghost" onclick="ta.value=''">🗑 모두 지우기</button>
+      <span class="hint">또는 아래 칸에 파일을 드래그하거나 경로를 붙여넣으세요</span>
+    </div>
+
+    <textarea id="paths" rows="4" placeholder="여기로 영상 파일을 끌어다 놓으면 자동으로 입력됩니다.
+
+직접 입력도 가능합니다:
+/Volumes/AIPP22/슈카월드/SKA_S01_EP31_HD_KR.mp4
 폴더 경로도 가능:  /Volumes/AIPP22/유병재/S30/"></textarea>
+
+    <div class="root-row">
+      <span class="root-label">📁 기본 폴더 (선택)</span>
+      <input class="root-input" id="root" placeholder="파일명만 넣었을 때 이 폴더에서 찾습니다 — 예: /Volumes/AIPP22">
     </div>
   </div>
 
@@ -198,97 +230,100 @@
       <div class="step-n" id="sn2">2</div>
       <div>
         <div class="step-ttl">영상 장르 선택</div>
-        <div class="step-sub">장르에 맞춰 분석 기준이 자동으로 설정됩니다</div>
+        <div class="step-sub">장르를 고르면 그에 맞는 분석 기준이 자동으로 설정됩니다.</div>
       </div>
     </div>
-    <div class="card">
-      <div class="genre-grid">
-        <div class="genre-card" data-genre="movie" onclick="selectGenre('movie')">
-          <div class="g-icon">🎬</div>
-          <div class="g-name">영화</div>
-          <div class="g-desc">극영화 · 다큐<br>컷 중심 편집</div>
+
+    <div class="genre-grid">
+      <div class="genre-card" data-genre="movie" onclick="selectGenre('movie')">
+        <div class="g-icon">🎬</div><div class="g-name">영화</div>
+        <div class="g-desc">극영화 · 다큐<br>컷 중심 편집</div>
+      </div>
+      <div class="genre-card" data-genre="drama" onclick="selectGenre('drama')">
+        <div class="g-icon">📺</div><div class="g-name">드라마</div>
+        <div class="g-desc">장면 전환 · 대화<br>균형 편집</div>
+      </div>
+      <div class="genre-card" data-genre="food" onclick="selectGenre('food')">
+        <div class="g-icon">🍽️</div><div class="g-name">푸드</div>
+        <div class="g-desc">요리 시연<br>토크 혼합</div>
+      </div>
+      <div class="genre-card" data-genre="kpop" onclick="selectGenre('kpop')">
+        <div class="g-icon">🎵</div><div class="g-name">케이팝</div>
+        <div class="g-desc">뮤직비디오<br>무대 · 공연</div>
+      </div>
+      <div class="genre-card active" data-genre="talk" onclick="selectGenre('talk')">
+        <div class="g-icon">🎙</div><div class="g-name">토크예능</div>
+        <div class="g-desc">퀴즈쇼 · 예능<br>토크쇼</div>
+      </div>
+      <div class="genre-card" data-genre="lecture" onclick="selectGenre('lecture')">
+        <div class="g-icon">📚</div><div class="g-name">강의정보</div>
+        <div class="g-desc">교육 · 설명<br>정보 채널</div>
+      </div>
+      <div class="genre-card" data-genre="travel" onclick="selectGenre('travel')">
+        <div class="g-icon">✈️</div><div class="g-name">여행</div>
+        <div class="g-desc">여행 브이로그<br>컷 · 풍경</div>
+      </div>
+      <div class="genre-card" data-genre="home" onclick="selectGenre('home')">
+        <div class="g-icon">🏠</div><div class="g-name">자취남</div>
+        <div class="g-desc">일상 브이로그<br>요리 · 생활</div>
+      </div>
+    </div>
+
+    <!-- 세부 조정 -->
+    <div class="adv-toggle" onclick="toggleAdv()">
+      <span id="adv-arr">▶</span> 세부 조정 (전문가용 · 선택)
+    </div>
+    <div class="adv-body" id="adv-body">
+      <div class="w-grid">
+        <div class="w-item">
+          <label>장면 전환 점수</label>
+          <div class="w-desc">화면이 바뀌는 컷을 얼마나 우선할지. 높을수록 컷 위치를 선호합니다.</div>
+          <div class="sl-row">
+            <input id="w_scene" type="range" min="0" max="10" step="0.5" value="6" oninput="sv('wsvv',this.value)">
+            <span id="wsvv" class="sl-val">6</span>
+          </div>
         </div>
-        <div class="genre-card" data-genre="drama" onclick="selectGenre('drama')">
-          <div class="g-icon">📺</div>
-          <div class="g-name">드라마</div>
-          <div class="g-desc">장면 전환 · 대화<br>균형 편집</div>
+        <div class="w-item">
+          <label>주제 전환 점수</label>
+          <div class="w-desc">이야기 내용이 크게 달라지는 지점에 주는 점수. 토크·강의에 효과적입니다.</div>
+          <div class="sl-row">
+            <input id="w_topic" type="range" min="0" max="10" step="0.5" value="4" oninput="sv('wtvv',this.value)">
+            <span id="wtvv" class="sl-val">4</span>
+          </div>
         </div>
-        <div class="genre-card" data-genre="food" onclick="selectGenre('food')">
-          <div class="g-icon">🍽️</div>
-          <div class="g-name">푸드</div>
-          <div class="g-desc">요리 시연<br>토크 혼합</div>
+        <div class="w-item">
+          <label>침묵 최소 길이</label>
+          <div class="w-desc">낮을수록 짧은 침묵도 후보로 인식합니다.</div>
+          <div class="sl-row">
+            <input id="sil_min" type="range" min="0.1" max="1.0" step="0.1" value="0.3" oninput="sv('smvv',parseFloat(this.value).toFixed(1)+'초')">
+            <span id="smvv" class="sl-val">0.3초</span>
+          </div>
         </div>
-        <div class="genre-card" data-genre="kpop" onclick="selectGenre('kpop')">
-          <div class="g-icon">🎵</div>
-          <div class="g-name">케이팝</div>
-          <div class="g-desc">뮤직비디오<br>무대 · 공연</div>
-        </div>
-        <div class="genre-card active" data-genre="talk" onclick="selectGenre('talk')">
-          <div class="g-icon">🎙</div>
-          <div class="g-name">토크예능</div>
-          <div class="g-desc">퀴즈쇼 · 예능<br>토크쇼</div>
-        </div>
-        <div class="genre-card" data-genre="lecture" onclick="selectGenre('lecture')">
-          <div class="g-icon">📚</div>
-          <div class="g-name">강의정보</div>
-          <div class="g-desc">교육 · 설명<br>정보 채널</div>
+        <div class="w-item">
+          <label>페이드 인/아웃 점수</label>
+          <div class="w-desc">화면이 서서히 어두워지는 구간을 얼마나 우선할지 정합니다.</div>
+          <div class="sl-row">
+            <input id="w_fade" type="range" min="0" max="10" step="0.5" value="2" oninput="sv('wfvv',this.value)">
+            <span id="wfvv" class="sl-val">2</span>
+          </div>
         </div>
       </div>
 
-      <!-- 세부 조정 -->
-      <div class="adv-toggle" onclick="toggleAdv()">
-        <span id="adv-arr">▶</span> 세부 조정 (선택사항)
-      </div>
-      <div class="adv-body" id="adv-body">
-        <div class="w-grid">
-          <div class="w-item">
-            <label>장면 전환 점수</label>
-            <div class="w-desc">화면이 바뀌는 컷에 주는 가중치. 높을수록 컷 위치를 우선합니다.</div>
-            <div class="sl-row">
-              <input id="w_scene" type="range" min="0" max="10" step="0.5" value="6" oninput="sv('wsvv',this.value)">
-              <span id="wsvv" class="sl-val">6</span>
-            </div>
-          </div>
-          <div class="w-item">
-            <label>주제 전환 점수</label>
-            <div class="w-desc">말 내용이 크게 달라지는 지점에 추가 점수. 토크·강의에 효과적.</div>
-            <div class="sl-row">
-              <input id="w_topic" type="range" min="0" max="10" step="0.5" value="4" oninput="sv('wtvv',this.value)">
-              <span id="wtvv" class="sl-val">4</span>
-            </div>
-          </div>
-          <div class="w-item">
-            <label>침묵 최소 길이</label>
-            <div class="w-desc">낮을수록 짧은 침묵도 마커 후보로 인식합니다 (3 = 0.3초).</div>
-            <div class="sl-row">
-              <input id="sil_min" type="range" min="2" max="10" step="1" value="3" oninput="sv('smvv',(this.value/10).toFixed(1)+'초')">
-              <span id="smvv" class="sl-val">0.3초</span>
-            </div>
-          </div>
-          <div class="w-item">
-            <label>CTA 패널티</label>
-            <div class="w-desc">'구독/좋아요' 등 홍보 표현 근처를 피하는 강도.</div>
-            <div class="sl-row">
-              <input id="p_cta" type="range" min="0" max="8" step="0.5" value="3" oninput="sv('pcvv',this.value)">
-              <span id="pcvv" class="sl-val">3</span>
-            </div>
-          </div>
-        </div>
-        <div style="margin-top:18px">
-          <div style="font-size:12px; color:var(--muted); margin-bottom:8px">광고 배치 간격 (분)</div>
-          <div class="t-grid">
-            <div><div class="t-lbl">첫 광고 최소</div><input id="fmin" type="number" value="3"></div>
-            <div><div class="t-lbl">첫 광고 최대</div><input id="fmax" type="number" value="10"></div>
-            <div><div class="t-lbl">광고 간격 최소</div><input id="gmin" type="number" value="10"></div>
-            <div><div class="t-lbl">광고 간격 최대</div><input id="gmax" type="number" value="15"></div>
-          </div>
+      <div class="gap-section">
+        <div class="gap-title">광고 배치 간격 (분)</div>
+        <div class="gap-sub">첫 광고가 들어갈 시간대와, 광고 사이의 간격을 정합니다.</div>
+        <div class="t-grid">
+          <div><div class="t-lbl">첫 광고 최소</div><input id="fmin" type="number" value="3"></div>
+          <div><div class="t-lbl">첫 광고 최대</div><input id="fmax" type="number" value="10"></div>
+          <div><div class="t-lbl">광고 간격 최소</div><input id="gmin" type="number" value="10"></div>
+          <div><div class="t-lbl">광고 간격 최대</div><input id="gmax" type="number" value="15"></div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 분석 버튼 -->
-  <button class="go-btn" id="go">분석 시작</button>
+  <button class="go-btn" id="go">분석 시작 ✨</button>
   <div id="status" class="status"></div>
 
   <!-- 결과 -->
@@ -332,24 +367,31 @@ ta.addEventListener('paste', e=>{
   ta.selectionStart=ta.selectionEnd=s+norm.length;
 });
 
-// ── 장르 프리셋 ────────────────────────────────────
-const PRESETS = {
-  movie:   {ws:8, wt:2, sm:5, pc:3},
-  drama:   {ws:7, wt:3, sm:5, pc:3},
-  food:    {ws:6, wt:4, sm:4, pc:4},
-  kpop:    {ws:7, wt:0, sm:5, pc:1},
-  talk:    {ws:6, wt:4, sm:3, pc:3},
-  lecture: {ws:3, wt:8, sm:3, pc:5},
-};
+// ── 장르 프리셋 (genres.json 에서 로드) ───────────────
+let PRESETS = {};
+fetch('/genres.json').then(r=>r.json()).then(list=>{
+  list.forEach(g=>{
+    PRESETS[g.id] = {
+      ws: g.w_scene,
+      wt: g.w_topic_change,
+      sm: g.silence_min,                    // 초 단위 그대로 (사람 단위 통일)
+      wf: g.w_fade,
+      frs: g.fade_require_silence,           // 페이드 침묵 관문 여부 (전송용)
+      fsb: g.fade_silence_bonus,             // 페이드 침묵 보너스 (전송용)
+    };
+  });
+});
 function selectGenre(g){
   document.querySelectorAll('.genre-card').forEach(c=>c.classList.remove('active'));
   document.querySelector('[data-genre="'+g+'"]').classList.add('active');
   const p = PRESETS[g];
   $('w_scene').value=p.ws; $('wsvv').textContent=p.ws;
   $('w_topic').value=p.wt; $('wtvv').textContent=p.wt;
-  $('sil_min').value=p.sm; $('smvv').textContent=(p.sm/10).toFixed(1)+'초';
-  $('p_cta').value=p.pc;   $('pcvv').textContent=p.pc;
+  $('sil_min').value=p.sm; $('smvv').textContent=parseFloat(p.sm).toFixed(1)+'초';
+  $('w_fade').value=p.wf;  $('wfvv').textContent=p.wf;
+  _activeGenre = g;        // 전송 시 fade_require_silence/bonus 참조
 }
+let _activeGenre = 'talk';
 function sv(id,val){ $(id).textContent=val; }
 function toggleAdv(){
   const b=$('adv-body'), open=b.classList.toggle('open');
@@ -375,14 +417,16 @@ async function analyze(){
         video_paths: paths,
         root: $('root').value.trim(),
         settings:{
-          first_min:    parseFloat($('fmin').value),
-          first_max:    parseFloat($('fmax').value),
-          gap_min:      parseFloat($('gmin').value),
-          gap_max:      parseFloat($('gmax').value),
-          w_scene:      parseFloat($('w_scene').value),
+          first_min:      parseFloat($('fmin').value),
+          first_max:      parseFloat($('fmax').value),
+          gap_min:        parseFloat($('gmin').value),
+          gap_max:        parseFloat($('gmax').value),
+          w_scene:        parseFloat($('w_scene').value),
           w_topic_change: parseFloat($('w_topic').value),
-          silence_min:  parseInt($('sil_min').value)/10,
-          p_cta:        parseFloat($('p_cta').value),
+          silence_min:    parseFloat($('sil_min').value),
+          w_fade:         parseFloat($('w_fade').value),
+          fade_require_silence: (PRESETS[_activeGenre]||{}).frs ?? true,
+          fade_silence_bonus:   (PRESETS[_activeGenre]||{}).fsb ?? 0,
         }
       })
     });
@@ -409,15 +453,15 @@ function renderResults(data){
       <span class="bulk-label">총 ${_results.length}편 일괄 다운로드</span>
       <div class="dl-group">
         <button class="btn-dl" onclick="dlZip(1)">⬇ 1차 XML 전체 (ZIP)</button>
-        <button class="btn-dl" onclick="dlZip(2)">⬇ 2차 XML 전체 (ZIP)</button>
+        <button class="btn-dl alt" onclick="dlZip(2)">⬇ 2차 XML 전체 (ZIP)</button>
       </div></div>`;
   }
 
   _results.forEach((d,i)=>{ h+=renderOne(d,i); });
   (data.errors||[]).forEach(e=>{
-    h+=`<div class="card" style="margin-bottom:16px"><span class="err-msg">⚠ ${esc(e.path)}<br>${esc(e.error)}</span></div>`;
+    h+=`<div class="res-card"><span class="err-msg">⚠ ${esc(e.path)}<br>${esc(e.error)}</span></div>`;
   });
-  $('result').innerHTML = h||'<div class="card err-msg">결과가 없습니다.</div>';
+  $('result').innerHTML = h||'<div class="res-card err-msg">결과가 없습니다.</div>';
 }
 
 async function dlZip(pass){
@@ -432,30 +476,29 @@ async function dlZip(pass){
 }
 
 function renderOne(d, ri){
-  const near = d.fps&&(Math.abs(d.fps-29.97)<0.05||Math.abs(d.fps-30)<0.05);
+  const near = d.fps&&Math.abs(d.fps-30)<0.05;
   const stem = d.video_name.replace(/\.[^.]+$/,'');
 
-  let h=`<div class="step" style="margin-bottom:24px">
-    <div class="step-hd">
+  let h=`<div class="res-card">
+    <div class="res-hd">
       <div class="step-n done">✓</div>
       <div>
-        <div class="step-ttl">${esc(d.video_name)}</div>
-        <div class="step-sub">${d.duration_tc} · ${d.fps||'?'} fps · 광고 구간 ${d.primary_count}개</div>
+        <div class="res-ttl">${esc(d.video_name)}</div>
+        <div class="res-meta">${d.duration_tc} · ${d.fps||'?'} fps · 광고 구간 ${d.primary_count}개</div>
       </div>
-    </div>
-    <div class="card">`;
+    </div>`;
 
   if(d.fps&&!near)
-    h+=`<div class="fps-note">⚠ 이 영상은 ${d.fps} fps입니다. 프리미어에서 29.97 NDF 시퀀스로 변환 후 임포트하세요.</div>`;
+    h+=`<div class="fps-note">⚠ 이 영상은 ${d.fps} fps입니다. 마커는 30fps 기준으로 계산되므로, 프리미어에서 30fps 시퀀스로 변환 후 임포트하세요.</div>`;
 
   // 다운로드 버튼 (항상 표시)
-  h+=`<div class="dl-group" style="margin-bottom:0">
+  h+=`<div class="dl-group">
     <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml">⬇ 1차 마커 XML (${d.primary_count}구간)</a>
-    <a class="btn-dl" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml">⬇ 전체 후보 XML (${d.marker_count}개)</a>
+    <a class="btn-dl alt" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml">⬇ 전체 후보 XML (${d.marker_count}개)</a>
   </div>`;
 
   // 타임코드 상세 토글
-  h+=`<div class="adv-toggle" onclick="togDetail(${ri})" style="margin-top:14px">
+  h+=`<div class="detail-tog" onclick="togDetail(${ri})">
     <span id="det-arr-${ri}">▶</span> 타임코드 상세 보기
   </div>
   <div id="det-body-${ri}" class="adv-body">`;
@@ -496,7 +539,7 @@ function renderOne(d, ri){
   });
   h+=`</div>`;
 
-  h+=`</div></div></div>`;
+  h+=`</div></div>`;
   return h;
 }
 

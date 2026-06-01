@@ -1,7 +1,7 @@
-"""Parse a free-form ground-truth text into {episode: [seconds, ...]}.
+"""자유 형식의 정답 텍스트를 {에피소드: [초, ...]} 형태로 파싱 (load_ground_truth.py)
 
-The user writes ad break times by hand while watching the video, so the input
-is loose — these all parse the same way:
+영상을 보면서 손으로 적은 광고 삽입 시간을 읽어 들입니다.
+입력 형식이 느슨해도 모두 동일하게 파싱됩니다:
 
     EP31: 07:37, 04:42, 03:12, 19:18
     SKA EP32  12:34  18:22
@@ -14,31 +14,23 @@ is loose — these all parse the same way:
       07:37
       04:42
 
-Rules:
-  - One *episode header* per block (a line that has a recognizable EP token but
-    no timecode). Examples that all match EP31: "EP31", "SKA_S01_EP31",
-    "EP31:", "SKA EP31  ", "ska s01 ep31 - hd_kr". The matcher is case-
-    insensitive and only requires the EP<number> token; channel/season prefixes
-    are optional.
-  - If the line also contains a season token S<N> immediately before EP<M>,
-    the key is "s{N}_ep{M}" (e.g. "s23_ep1"). This avoids collisions when
-    multiple series share the same episode numbers (e.g. YBJ_S23_EP01 vs
-    YBJ_S24_EP01). When no season token is present, the key is plain "ep{M}"
-    for backward compatibility.
-  - Times can sit on the same line as the header or on the following lines,
-    separated by commas, spaces, or newlines, until the next header.
-  - Each time is HH:MM:SS, MM:SS, or H:MM:SS. Bare seconds (e.g. "457") are
-    accepted but discouraged.
-  - Lines starting with '#' are ignored. Blank lines are ignored.
+파싱 규칙:
+  - 각 블록에 *에피소드 헤더* 한 줄 (타임코드 없이 EP 토큰만 있는 줄).
+    EP31로 인식되는 예시: "EP31", "SKA_S01_EP31", "EP31:", "SKA EP31  ",
+    "ska s01 ep31 - hd_kr". 대소문자 구분 없음. 채널·시즌 접두어는 선택.
+  - 시즌 토큰 S<N>이 EP<M> 바로 앞에 있으면 키는 "s{N}_ep{M}" (예: "s23_ep1").
+    같은 에피소드 번호를 여러 시리즈가 공유할 때 충돌 방지용
+    (예: YBJ_S23_EP01 vs YBJ_S24_EP01). 시즌 토큰 없으면 "ep{M}".
+  - 타임코드는 헤더와 같은 줄 또는 다음 줄에 쉼표·공백·개행으로 구분하여 입력.
+    다음 헤더 전까지가 해당 에피소드의 시간 목록.
+  - 시간 형식: HH:MM:SS, MM:SS, H:MM:SS. 초 단위 숫자("457")도 허용하나 비권장.
+  - '#'로 시작하는 줄과 빈 줄은 무시.
 
-The episode key returned is the EP token in lowercase, optionally prefixed by
-the season: "ep31" or "s23_ep1". Callers that need the full file stem (e.g.
-"SKA_S01_EP31_HD_KR") should resolve it from the workspace XML filenames using
-`resolve_episode`.
+반환하는 에피소드 키는 소문자 EP 토큰, 시즌이 있으면 앞에 붙임: "ep31" / "s23_ep1".
+전체 파일명(예: "SKA_S01_EP31_HD_KR")이 필요하면 `resolve_episode`로 XML 파일명에서 해석.
 
-This is *not* a strict parser — it is meant to read whatever the user pastes.
-Anything genuinely unparseable is collected and reported, never silently
-dropped.
+엄격한 파서가 아닙니다 — 사용자가 붙여 넣은 내용을 최대한 읽어 들이는 게 목표.
+파싱 불가 항목은 수집·보고하며, 조용히 버리지 않습니다.
 """
 from __future__ import annotations
 

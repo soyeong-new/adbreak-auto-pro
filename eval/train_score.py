@@ -1,22 +1,21 @@
-"""Train a score model from the feature matrix produced by extract_features.py.
+"""extract_features.py가 생성한 피처 행렬로 점수 모델 학습 (train_score.py)
 
-Models:
-  1. Logistic Regression — interpretable; coefficients map directly back to
-     the weight constants in local_breaks._score().
-  2. Random Forest — performance comparison; also gives feature importances.
+모델:
+  1. 로지스틱 회귀 — 해석 가능. 계수가 local_breaks._score()의 가중치 상수와 직접 대응.
+  2. 랜덤 포레스트 — 성능 비교용. 피처 중요도도 제공.
 
-Validation:
-  - GroupKFold with 5 folds, grouped by episode (ep column).
-    Same episode never appears in both train and test splits.
-  - Primary metric: PR-AUC (precision-recall, appropriate for imbalanced data).
-  - Also reports ROC-AUC, precision@recall=0.5, and per-threshold PR table.
+검증:
+  - 에피소드(ep 컬럼) 기준 GroupKFold 5겹 교차 검증.
+    같은 에피소드가 훈련/테스트에 동시에 포함되지 않음.
+  - 주 지표: PR-AUC (불균형 데이터에 적합한 정밀도-재현율 곡선).
+  - ROC-AUC, precision@recall=0.5, 임계값별 PR 표도 함께 보고.
 
-Class imbalance:
-  label=1 is ~3% of data → class_weight='balanced' for both models.
+클래스 불균형:
+  label=1이 전체의 약 3% → 두 모델 모두 class_weight='balanced' 적용.
 
-Output:
-  eval/output/train_report.json  — full results (weights, CV scores, PR tables)
-  prints a summary to stdout
+출력:
+  eval/output/train_report.json  — 전체 결과 (가중치, CV 점수, PR 표)
+  요약 내용을 stdout에 출력
 """
 from __future__ import annotations
 

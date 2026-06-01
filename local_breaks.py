@@ -23,7 +23,7 @@ import math
 from topic_breaks import build_sentences
 from framecode import (FPS, FF_TOP, FF_CANDIDATE, FF_ALLOWED, frame_to_seconds,
                        frame_tier, frame_to_timecode)
-from patterns import starts_with_continuation, has_cta
+from patterns import starts_with_continuation
 
 DEFAULTS = {
     "intro_deadzone": 180.0,
@@ -38,9 +38,6 @@ DEFAULTS = {
     # continuation marker ("근데/사실/그리고/아/음/…") is dropped. A penalty
     # of P_CONTINUATION is always applied (whether or not the marker is kept).
     "exclude_continuation": False,
-    # When True, a sentence pair where prev or next contains a CTA keyword
-    # ("구독/좋아요/알림/스폰서/…") is dropped. P_CTA always applied.
-    "exclude_cta": False,
     # Minimum score required to keep a marker. None = no cutoff (v1.0 default).
     "min_score": None,
 }
@@ -77,7 +74,6 @@ P_QA = 1.0
 # continuation marker survives but is demoted below borderline neutral
 # markers. This keeps recall as-is while marking suspicious cases low.
 P_CONTINUATION = 2.0
-P_CTA = 3.0
 
 SILENCE_K = 0.78        # silence depth as a fraction of the speech-to-floor range
 SILENCE_MIN = 0.5       # seconds of continuous silence a real pause needs
@@ -100,6 +96,7 @@ W_TOPIC_CHANGE = 4.0   # 주제 전환 확인 시 추가 점수 (2.0→4.0)
 # 침묵 기준은 Path 1보다 낮은 0.2s — 페이드 아웃 중 음성이 완전히 꺼지는 짧은 구간도 잡기 위함.
 FADE_SILENCE_SEARCH = 0.5  # V 꼭짓점 전후 침묵 탐색 반경(s)
 FADE_SILENCE_MIN    = 0.2  # 침묵 인정 최소 길이(s) — Path 1(≥0.5s)보다 느슨하게
+W_FADE = 4.0               # 페이드 앵커 장면 전환 가중치 기본값 (UI에서 override 가능)
 
 
 def _strip_punct(text):
@@ -162,7 +159,7 @@ def _find_silence(voice_env, t0, t1, noise_floor, min_dur=None):
 
 
 def _allowed_frame_in(s0, s1):
-    """Pick an allowed 29.97 NDF frame inside the silence [s0, s1]: the earliest
+    """Pick an allowed 30 fps frame inside the silence [s0, s1]: the earliest
     :00 frame if the silence holds one, else the earliest :01-03/:28-29 frame.
     None if the silence is too short to contain any allowed frame."""
     f0 = math.ceil(s0 * FPS)
@@ -189,7 +186,7 @@ def _nearest_allowed_frame(t):
 
 
 def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
-           w_scene=W_SCENE, p_cta=P_CTA):
+           w_scene=W_SCENE, fade_mode=False):
     """Score a marker. Returns (score, reasons, has_signal, kill_reason).
 
     Every marker already sits in a verified silence after a completed sentence;
@@ -199,8 +196,13 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
     pattern, else None. The caller decides whether to drop the marker based on
     its settings — `_score` itself never drops anything.
 
-    w_scene : 장면 전환 보너스 (UI 장르 설정에 따라 override)
-    p_cta   : CTA 키워드 패널티 (UI 장르 설정에 따라 override)
+    w_scene   : 장면/페이드 전환 보너스 (UI 장르 설정에 따라 override)
+    fade_mode : Path 3(페이드) 전용. 페이드 구간은 발화가 끊겨 대사 기반 점수가
+                노이즈이므로, 화면·프레임·마무리 표현만 채점하고 나머지 대사
+                항목(연속/전환 표현, 짧은 문장, Q&A)은 건너뛴다.
+
+    2026-06: CTA 패널티(p_cta) 전면 삭제 — 측정 결과 정답 재현에 영향이 없어
+    전체 패스·전체 장르에서 제거. patterns.has_cta는 더 이상 채점에 쓰지 않음.
     """
     score = 0.0
     reasons = [f"문장 끝 직후 {silence_len:.1f}초 침묵"]
@@ -212,25 +214,30 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
         reasons.append(f"장면 컷에서 시작({cut_dist:.2f}s)")
 
     nxt_s = nxt.strip()
-    # The continuation check runs *before* STRONG/WEAK openers. STRONG_OPENERS
-    # starts with phrases like "자 그러면" / "자 이제" that begin with single
-    # tokens also in CONTINUATION_OPENERS ("자/그러면/이제" etc.) only
-    # superficially — STRONG patterns are multi-word and more specific, so
-    # checking continuation first does not steal credit from them.
-    if starts_with_continuation(nxt_s):
-        score -= P_CONTINUATION
-        reasons.append("다음 문장이 발화 지속 표현으로 시작(연결 가능성)")
-        kill_reason = "continuation"
-    elif any(nxt_s.startswith(o) for o in STRONG_OPENERS):
-        score += W_STRONG_OPENER
-        reasons.append("다음 문장이 화제 전환 표현으로 시작")
-        signal = True
-    elif any(nxt_s.startswith(o) for o in WEAK_OPENERS):
-        score += W_WEAK_OPENER
-        reasons.append("다음 문장이 전환 표현으로 시작")
-        signal = True
-
     ended_core = _strip_punct(ended)
+
+    # 대사 기반 항목 — 페이드 구간은 발화 단절로 신뢰 불가, fade_mode에서 건너뜀.
+    if not fade_mode:
+        # The continuation check runs *before* STRONG/WEAK openers. STRONG_OPENERS
+        # starts with phrases like "자 그러면" / "자 이제" that begin with single
+        # tokens also in CONTINUATION_OPENERS ("자/그러면/이제" etc.) only
+        # superficially — STRONG patterns are multi-word and more specific, so
+        # checking continuation first does not steal credit from them.
+        if starts_with_continuation(nxt_s):
+            score -= P_CONTINUATION
+            reasons.append("다음 문장이 발화 지속 표현으로 시작(연결 가능성)")
+            kill_reason = "continuation"
+        elif any(nxt_s.startswith(o) for o in STRONG_OPENERS):
+            score += W_STRONG_OPENER
+            reasons.append("다음 문장이 화제 전환 표현으로 시작")
+            signal = True
+        elif any(nxt_s.startswith(o) for o in WEAK_OPENERS):
+            score += W_WEAK_OPENER
+            reasons.append("다음 문장이 전환 표현으로 시작")
+            signal = True
+
+    # 마무리 표현 — Path 1/2/3 모두 적용. 페이드아웃 직전 문장이 종결 표현이면
+    # "장면이 끝나고 암전" 패턴이라 페이드에서도 유효한 신호.
     if any(ended_core.endswith(c) for c in CLOSERS):
         score += W_CLOSER
         reasons.append("앞 문장이 마무리 표현으로 종료")
@@ -244,19 +251,13 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
         score += W_FRAME_TOP
         reasons.append("최우선 :00 프레임")
 
-    if len(ended_core) < 8:
-        score -= P_SHORT
-        reasons.append("앞 문장이 너무 짧음(조각)")
-    if ended.strip().endswith("?") or re.search(r"(냐|까|까요|나요)$", ended_core):
-        score -= P_QA
-        reasons.append("앞 문장이 질문(자문자답 중간 가능성)")
-
-    if has_cta(ended) or has_cta(nxt):
-        score -= p_cta
-        reasons.append("CTA/홍보 키워드 인접")
-        # CTA wins over continuation as the kill reason — it's a stronger
-        # signal that the marker should not exist.
-        kill_reason = "cta"
+    if not fade_mode:
+        if len(ended_core) < 8:
+            score -= P_SHORT
+            reasons.append("앞 문장이 너무 짧음(조각)")
+        if ended.strip().endswith("?") or re.search(r"(냐|까|까요|나요)$", ended_core):
+            score -= P_QA
+            reasons.append("앞 문장이 질문(자문자답 중간 가능성)")
 
     return score, reasons, signal, kill_reason
 
@@ -291,8 +292,15 @@ def select_ad_breaks_local(segments, duration, settings=None,
     # 장르 가중치 — UI 설정값이 있으면 우선 사용, 없으면 모듈 상수 기본값
     _w_scene  = float(s.get("w_scene",        W_SCENE))
     _w_topic  = float(s.get("w_topic_change", W_TOPIC_CHANGE))
-    _p_cta    = float(s.get("p_cta",          P_CTA))
     _sil_min  = float(s.get("silence_min",    SILENCE_MIN))
+    _w_fade   = float(s.get("w_fade",         W_FADE))
+    # Path 3(페이드) 장르 파라미터
+    #   fade_require_silence: 침묵을 관문으로 요구할지. 영화·드라마·케이팝은 False
+    #     (페이드 위 배경 스코어가 지속돼 침묵이 없어도 진짜 전환임).
+    #   fade_silence_bonus: 침묵이 동반될 때 주는 가산점. 케이팝만 >0
+    #     (다른 가수 등장 시 페이드인 + 침묵이 강한 신호).
+    _fade_req_sil = bool(s.get("fade_require_silence", True))
+    _fade_sil_bonus = float(s.get("fade_silence_bonus", 0.0))
 
     # the video's own noise floor -- bottom of the adaptive silence scale
     noise_floor = (_noise_floor(voice_env)
@@ -341,13 +349,11 @@ def select_ad_breaks_local(segments, duration, settings=None,
         sc, reasons, signal, kill_reason = _score(
             ended["text"], nxt["text"], frame, has_cut, cut_dist,
             sil[1] - sil[0],
-            w_scene=_w_scene, p_cta=_p_cta)
+            w_scene=_w_scene)
 
         # v1.1 exclusion: optional, off by default. exclude_* tells the
         # detector to drop markers whose kill_reason matches.
         if kill_reason == "continuation" and s.get("exclude_continuation"):
-            continue
-        if kill_reason == "cta" and s.get("exclude_cta"):
             continue
         # v1.1 minimum score cutoff: optional, off by default.
         if s.get("min_score") is not None and sc < s["min_score"]:
@@ -431,7 +437,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
             sc, reasons, signal, kill_reason = _score(
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0, silence_len=0.0,
-                w_scene=_w_scene, p_cta=_p_cta)
+                w_scene=_w_scene)
 
             # 텍스트 의미 유사도: 낮을수록 주제 전환 가능성 높음.
             text_sim = (text_sims or {}).get(cut_t)
@@ -448,8 +454,6 @@ def select_ad_breaks_local(segments, duration, settings=None,
             reasons = [reason_prefix] + reasons
 
             if kill_reason == "continuation" and s.get("exclude_continuation"):
-                continue
-            if kill_reason == "cta" and s.get("exclude_cta"):
                 continue
             if s.get("min_score") is not None and sc < s["min_score"]:
                 continue
@@ -488,26 +492,50 @@ def select_ad_breaks_local(segments, duration, settings=None,
     # 텍스트 의미 유사도 없음 — 페이드 중에는 발화가 끊겨 있어 임베딩 신뢰도 낮음.
     # ------------------------------------------------------------------
     if fade_cuts:
-        covered_all = {m["time"] for m in markers}
+        # 컷·페이드 중복은 '페이드 우선 + 증거 병합'으로 처리한다.
+        # existing: 병합 대상(Path 1/2 마커). placed_fades: 페이드끼리 중복 방지용.
+        existing = list(markers)
+        placed_fades = set()
 
         for fade_t in sorted(fade_cuts):
             if not (lo <= fade_t <= hi):
                 continue
-            # 이미 Path 1/2 마커가 SCENE_RADIUS 이내에 있으면 건너뜀
-            if any(abs(fade_t - t) <= SCENE_RADIUS for t in covered_all):
+            # (1) 컷·페이드 중복: SCENE_RADIUS 이내 기존 Path 1/2 마커가 있으면,
+            #     새 마커를 만들지 않고 그 마커를 '페이드 앵커'로 승격(증거 병합).
+            #     → CLIP 재검증 면제 + 2차 XML 포함. 컷의 CLIP·점수 증거는 그대로 보존.
+            overlap = [m for m in existing
+                       if abs(fade_t - m["time"]) <= SCENE_RADIUS]
+            if overlap:
+                m = min(overlap, key=lambda m: abs(fade_t - m["time"]))
+                if not m.get("fade_anchor"):
+                    m["fade_anchor"] = True
+                    m["cut_anchor"] = True
+                    m["reason"] += (f"; 페이드 V 꼭짓점 겹침({fade_t:.2f}s)"
+                                    " — 페이드 우선·증거 병합")
+                continue
+            # (2) 페이드끼리 SCENE_RADIUS 이내 중복이면 건너뜀
+            if any(abs(fade_t - t) <= SCENE_RADIUS for t in placed_fades):
                 continue
 
-            # 침묵 확인: V 꼭짓점 ±FADE_SILENCE_SEARCH 범위에서 FADE_SILENCE_MIN 이상 침묵
+            # 침묵 확인: V 꼭짓점 ±FADE_SILENCE_SEARCH 범위에서 FADE_SILENCE_MIN 이상 침묵.
+            #   fade_require_silence=True (토크·강의 등): 침묵이 관문 — 없으면 탈락.
+            #   False (영화·드라마·케이팝): 페이드 위 배경 스코어가 지속돼 침묵이 없어도
+            #     진짜 전환이므로 통과. 침묵은 있으면 보너스로만 반영.
             sil = _find_silence(voice_env,
                                 max(0.0, fade_t - FADE_SILENCE_SEARCH),
                                 fade_t + FADE_SILENCE_SEARCH,
                                 noise_floor,
                                 min_dur=FADE_SILENCE_MIN)
-            if sil is None:
+            if sil is None and _fade_req_sil:
                 continue
 
-            # 침묵 안에 허용 프레임 배치
-            frame = _allowed_frame_in(*sil)
+            # 프레임 배치: 침묵이 있으면 그 침묵 안에, 없으면 V 꼭짓점 최근접 허용 프레임.
+            if sil is not None:
+                frame = _allowed_frame_in(*sil)
+                silence_len = sil[1] - sil[0]
+            else:
+                frame = _nearest_allowed_frame(fade_t)
+                silence_len = 0.0
             if frame is None:
                 continue
             marker_time = frame_to_seconds(frame)
@@ -532,18 +560,23 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 ended_text = ""
                 nxt_text   = ""
 
-            # has_cut=True (화면 전환 신호로 취급), CLIP 재검증 없음
+            # has_cut=True (화면 전환 신호로 취급), CLIP 재검증 없음.
+            # fade_mode=True — 대사 기반 점수는 제외, 화면·프레임·마무리 표현만 채점.
             sc, reasons, signal, kill_reason = _score(
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0,
-                silence_len=sil[1] - sil[0],
-                w_scene=_w_scene, p_cta=_p_cta)
+                silence_len=silence_len,
+                w_scene=_w_fade, fade_mode=True)
 
-            reasons = [f"페이드 인/아웃 V 꼭짓점 ({fade_t:.2f}s) · 음성 침묵 확인"] + reasons
+            # 케이팝 등: 페이드 + 침묵 동반 시 가산 (다른 가수 등장 페이드인 신호).
+            if sil is not None and _fade_sil_bonus:
+                sc += _fade_sil_bonus
+                reasons.append(f"페이드 + 침묵 동반(+{_fade_sil_bonus:.1f})")
+
+            sil_tag = "음성 침묵 확인" if sil is not None else "침묵 없음(배경음 지속)"
+            reasons = [f"페이드 인/아웃 V 꼭짓점 ({fade_t:.2f}s) · {sil_tag}"] + reasons
 
             if kill_reason == "continuation" and s.get("exclude_continuation"):
-                continue
-            if kill_reason == "cta" and s.get("exclude_cta"):
                 continue
             if s.get("min_score") is not None and sc < s["min_score"]:
                 continue
@@ -564,7 +597,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 "cut_anchor": True,         # 2차 XML 포함용 플래그
             }
             markers.append(m)
-            covered_all.add(marker_time)
+            placed_fades.add(marker_time)
 
     markers.sort(key=lambda m: m["time"])
     return markers

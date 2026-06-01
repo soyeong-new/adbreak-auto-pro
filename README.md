@@ -12,7 +12,7 @@
 핵심 설계 원칙은 두 가지입니다.
 
 1. **완전 자동화를 목표로 하지 않는다.** 광고 지점은 편집자의 판단이 작용하는 주관적 결정이고, 동일한 조건을 가진 위치가 여러 개 있을 수 있습니다. 이 도구는 "딱 맞는 한 프레임"을 찾는 게 아니라 조건을 만족하는 후보를 좁혀서 제시하고 최종 선택은 편집자가 합니다.
-2. **마커는 반드시 허용 프레임에만 위치한다.** 29.97fps NDF 기준 :00/:01/:02/:03/:28/:29 프레임만 허용합니다. 이 외의 프레임은 어떤 이유로도 생성하지 않으며, 스냅(근접 프레임으로 보정)도 없습니다.
+2. **마커는 반드시 허용 프레임에만 위치한다.** 30fps 기준 :00/:01/:02/:03/:28/:29 프레임만 허용합니다. 이 외의 프레임은 어떤 이유로도 생성하지 않으며, 스냅(근접 프레임으로 보정)도 없습니다.
 
 ---
 
@@ -130,7 +130,7 @@ vscode/
     ├── text_similarity.py   한국어 텍스트 유사도 (ko-sroberta-multitask)
     ├── topic_breaks.py      Whisper 세그먼트 → 문장 병합 (한국어 종결어미 기반)
     ├── patterns.py          한국어 패턴 감지 (CTA, 연속 표현, 오프너/클로저)
-    ├── framecode.py         타임코드/프레임 변환, 허용 프레임 정의 (29.97 NDF)
+    ├── framecode.py         타임코드/프레임 변환, 허용 프레임 정의 (30fps)
     ├── xml_output.py        Premiere용 FCP7 XML 생성
     ├── ground_truth.txt     평가용 정답 데이터 (에피소드별 광고 타임코드)
     └── eval/
@@ -144,30 +144,73 @@ vscode/
 
 ---
 
-## 설치
+## 설치 — 필요한 프로그램 정리
 
-Python 3.11, Apple Silicon Mac. 의존성은 `vscode/.venv`에 설치돼 있습니다.
+대상 환경: **macOS (Apple Silicon, M1/M2/M3)**, Python 3.11
 
-새로운 환경에서 설치할 경우:
+### A. 시스템 프로그램
+
+| 프로그램 | 분류 | 설명 |
+|---|---|---|
+| **Homebrew** | 필수 | macOS용 패키지 매니저. 아래 시스템 프로그램들을 설치하기 위한 기반 도구 (https://brew.sh) |
+| **Python 3.11** | 필수 | 분석 도구의 실행 언어. 3.11.15 기준으로 동작 검증됨 (3.12/3.13은 의존성 충돌 가능) |
+| **FFmpeg** | 필수 | 영상에서 음성·프레임 밝기를 추출하는 영상 처리 엔진. `ffmpeg`, `ffprobe` 두 명령이 사용됨 |
+| **Git** | 필수 | 프로젝트 코드 버전 관리·복사용 (macOS에 보통 기본 설치돼 있음) |
+| **Visual Studio Code** | 권장 | 코드 편집·실행용 IDE |
+| **Google Drive 데스크톱 앱** | 권장 | 팀 공유 폴더 자동 감시(`watcher.py`)를 사용할 경우 필요. 구글 드라이브를 로컬 폴더처럼 마운트 |
+| **Adobe Premiere Pro** | 선택 | 분석 결과 XML을 실제 편집에 사용하는 영상 편집 도구. 분석 PC에는 꼭 필요하지는 않음 |
+
+### B. Python 패키지 (가상환경에 설치)
+
+| 패키지 | 버전 | 설명 |
+|---|---|---|
+| **mlx-whisper** | 0.4.3 | Apple Silicon 전용 음성 인식 엔진. 영상 음성을 텍스트 + 단어별 타임스탬프로 변환 |
+| **faster-whisper** | 1.2.1 | mlx 사용 불가 환경(Intel Mac 등)에서의 폴백용 음성 인식 엔진 |
+| **open-clip-torch** | 3.3.0 | CLIP 시각 모델(ViT-B-32-quickgelu) 로더. 컷 전후 프레임 비교로 진짜 장면 전환 여부 판별 |
+| **scenedetect** (PySceneDetect) | 0.7 | 영상에서 장면 전환 컷을 자동으로 찾아주는 라이브러리 |
+| **sentence-transformers** | 5.5.1 | 한국어 문장 임베딩 모델(`jhgan/ko-sroberta-multitask`) 로더. 컷 전후 발화의 주제 변화 측정 |
+| **opencv-python** | 4.13.0.92 | 영상 프레임 디코딩 및 이미지 처리 |
+| **Pillow** | 12.2.0 | 이미지 처리 라이브러리 (CLIP 입력 변환용) |
+| **numpy** | 2.4.6 | 수치 연산 기본 라이브러리. 위 모든 패키지의 공통 의존성 |
+| **torch** (PyTorch) | 2.12.0 | CLIP, sentence-transformers의 딥러닝 백엔드 |
+| **torchvision** | 0.27.0 | torch와 함께 쓰는 비전 모델/변환 유틸 |
+
+### C. 외부 리소스 (자동 다운로드)
+
+| 항목 | 크기 | 설명 |
+|---|---|---|
+| CLIP 모델 (ViT-B-32-quickgelu) | ~350MB | 첫 실행 시 자동 다운로드 |
+| ko-sroberta 모델 | ~400MB | 첫 실행 시 자동 다운로드 |
+
+> 최초 1회는 인터넷 연결이 필요합니다.
+
+---
+
+### 설치 순서 요약
 
 ```bash
-cd /Users/choisoyeong/Desktop/vscode
+# 1. Homebrew 설치 (https://brew.sh 의 한 줄 명령 실행)
+
+# 2. 시스템 프로그램 설치
+brew install python@3.11 ffmpeg git
+
+# 3. 프로젝트 코드 복사
+#    /Users/{사용자명}/Desktop/vscode/adbreak_auto_pro 위치에 배치
+
+# 4. 가상환경 생성 + Python 패키지 설치
+cd /Users/{사용자명}/Desktop/vscode
 python3.11 -m venv .venv
-.venv/bin/pip install \
-  mlx-whisper==0.4.3 \
-  open-clip-torch==3.3.0 \
-  scenedetect==0.7 \
-  sentence-transformers==5.5.1 \
-  opencv-python==4.13.0.92 \
-  numpy==2.4.6 \
-  Pillow==12.2.0 \
-  faster-whisper==1.2.1 \
-  torch==2.12.0 \
-  torchvision==0.27.0
+.venv/bin/pip install mlx-whisper==0.4.3 open-clip-torch==3.3.0 \
+  scenedetect==0.7 sentence-transformers==5.5.1 opencv-python==4.13.0.92 \
+  numpy==2.4.6 Pillow==12.2.0 faster-whisper==1.2.1 \
+  torch==2.12.0 torchvision==0.27.0
+
+# 5. 실행 (첫 실행 시 모델 자동 다운로드 ~750MB)
+cd /Users/{사용자명}/Desktop/vscode/adbreak_auto_pro
+../.venv/bin/python app.py
 ```
 
-처음 실행 시 CLIP 모델(ViT-B-32-quickgelu, ~350MB)과 ko-sroberta 모델(~400MB)이 자동 다운로드됩니다.  
-`ffmpeg` / `ffprobe`가 PATH에 있어야 합니다 (`brew install ffmpeg`).
+> ⚠️ `start_watcher.command` 등 일부 파일에 `/Users/choisoyeong/Desktop/vscode/...` 경로가 하드코딩되어 있습니다. 새 컴퓨터의 사용자명이 다르면 해당 경로를 수정해야 합니다.
 
 ---
 
@@ -318,5 +361,5 @@ GT 매칭 기준: 마커 시각이 정답 타임코드와 **5초 이내**이면 
 | 딥러닝 프레임워크 | PyTorch | 2.12.0 |
 | 문장 분리 | 자체 한국어 종결어미 판별기 (topic_breaks.py) | — |
 | 영상 처리 | FFmpeg / ffprobe | brew 최신 |
-| 프레임 기준 | 29.97 fps Non-Drop-Frame (NDF) | — |
+| 프레임 기준 | 30 fps | — |
 | 웹 서버 | Python http.server | Python 3.11 |

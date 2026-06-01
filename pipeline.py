@@ -85,7 +85,7 @@ def _transcribe_mlx(video_path):
         return None
     # word_timestamps=True forces DTW word alignment, which gives sub-second
     # (0.02s) timestamps. Without it Whisper falls back to coarse 1-second
-    # timestamps in low-confidence spans -- and integer seconds, under 29.97
+    # timestamps in low-confidence spans -- and integer seconds, under 30
     # fps, can never land on the allowed :00-03/:28-29 frames, silently
     # killing every candidate in that span.
     r = mlx_whisper.transcribe(video_path, path_or_hf_repo=MLX_REPO,
@@ -170,7 +170,7 @@ def detect_fade_cuts(video_path, progress=None):
         _save_cache(video_path, "fades", {"fades": []})
         return []
 
-    fps = get_fps(video_path) or 29.97
+    fps = get_fps(video_path) or 30.0
     frames = (np.frombuffer(raw[:n_frames * frame_size], dtype=np.uint8)
               .reshape(n_frames, frame_size))
     brightness = frames.mean(axis=1)  # shape: (n_frames,), 0–255

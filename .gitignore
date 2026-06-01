@@ -5,4 +5,6 @@
 eval/output/
 __pycache__/
 *.pyc
+.DS_Store
+.understand-anything/
 
