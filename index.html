@@ -378,6 +378,7 @@ fetch('/genres.json').then(r=>r.json()).then(list=>{
       wf: g.w_fade,
       frs: g.fade_require_silence,           // 페이드 침묵 관문 여부 (전송용)
       fsb: g.fade_silence_bonus,             // 페이드 침묵 보너스 (전송용)
+      cth: g.clip_threshold,                 // CLIP 장면전환 문턱 (전송용)
     };
   });
 });
@@ -427,6 +428,7 @@ async function analyze(){
           w_fade:         parseFloat($('w_fade').value),
           fade_require_silence: (PRESETS[_activeGenre]||{}).frs ?? true,
           fade_silence_bonus:   (PRESETS[_activeGenre]||{}).fsb ?? 0,
+          clip_threshold:       (PRESETS[_activeGenre]||{}).cth ?? 0.80,
         }
       })
     });

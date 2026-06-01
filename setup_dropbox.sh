@@ -29,6 +29,7 @@ PARAM_GUIDE = {
   "w_fade"         : "페이드 인/아웃 가중치 (0~10, 높을수록 암전 지점 우선)",
   "fade_require_silence" : "페이드 마커에 침묵을 필수로 요구할지 (영화·드라마·케이팝=false, 배경음 지속 장르)",
   "fade_silence_bonus"   : "페이드에 침묵이 동반될 때 가산점 (케이팝만 >0)",
+  "clip_threshold"       : "장면 전환 인정 CLIP 유사도 문턱 (이 값 미만이면 진짜 전환. 기본 0.80, 자취남 0.85)",
 }
 
 for g in genres:
@@ -48,6 +49,7 @@ for g in genres:
         "w_fade"         : g["w_fade"],
         "fade_require_silence" : g["fade_require_silence"],
         "fade_silence_bonus"   : g["fade_silence_bonus"],
+        "clip_threshold"       : g["clip_threshold"],
     }
     out = os.path.join(folder, "settings.json")
     with open(out, "w", encoding="utf-8") as f:

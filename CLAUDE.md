@@ -19,7 +19,7 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 - **허용 프레임**: 30fps 기준 :00/:01/:02/:03/:28/:29 만 허용. 스냅 없음.
 - **XML 자동 저장 없음**: 분석 완료 후 파일을 자동으로 디스크에 쓰지 않음. UI 다운로드 버튼으로만 저장.
-- **CLIP 임계값**: `SAME_THRESHOLD = 0.80` (scene_verify.py). 유사도 < 0.80 = 진짜 장면 전환.
+- **CLIP 임계값**: 기본 `SAME_THRESHOLD = 0.80` (scene_verify.py). 유사도 < 0.80 = 진짜 장면 전환. 장르별 `clip_threshold`로 override (자취남=0.85 — 같은 집 안 약한 컷도 광고점, 측정: 2차 마커 5→11개·재현 25%→41%).
 - **텍스트 유사도 임계값**: `TEXT_SIM_THRESHOLD = 0.75` (local_breaks.py). 미만이면 주제 전환 +4.0점.
 
 ## 파일 구조 및 역할
@@ -132,7 +132,8 @@ rm .cache/{영상명}_{크기}.*               # 전체 재분석
 `genres.json`만 고치면 양쪽에 반영된다. 단위는 사람 단위(분·초·점수)로 통일.
 
 키: `w_scene`, `w_topic_change`, `silence_min`(초), `w_fade`,
-`fade_require_silence`(bool), `fade_silence_bonus`(점수), 광고 간격(분).
+`fade_require_silence`(bool), `fade_silence_bonus`(점수),
+`clip_threshold`(CLIP 장면전환 문턱, 기본 0.80), 광고 간격(분).
 `_검증상태` 객체로 "임시값/측정됨"을 표기 — 새 장르 데이터가 들어오면 해당 값만
 수정하면 된다.
 

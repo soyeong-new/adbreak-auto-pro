@@ -122,7 +122,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 settings[key] = float(val) * 60.0
 
         # 장르 가중치 — 분 변환 없이 그대로 사용
-        for key in ("w_scene", "w_topic_change", "w_fade", "fade_silence_bonus"):
+        for key in ("w_scene", "w_topic_change", "w_fade", "fade_silence_bonus",
+                    "clip_threshold"):
             val = data.get("settings", {}).get(key)
             if val is not None:
                 settings[key] = float(val)

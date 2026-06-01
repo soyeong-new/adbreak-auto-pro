@@ -98,13 +98,17 @@ def run_analysis(video_path, settings=None, progress=None):
           **(settings or {})}
     valid_cuts = [c for c in scenes
                   if _s["intro_deadzone"] <= c <= duration - _s["outro_deadzone"]]
+    # 장르별 CLIP 문턱 — 이 값 미만이면 "진짜 장면 전환"으로 컷 앵커 후보 생성.
+    # 기본 0.80(SAME_THRESHOLD). 자취남처럼 같은 공간 내 약한 컷이 광고점인 장르는
+    # 0.85로 완화해 후보를 넓힌다 (genres.json clip_threshold).
+    clip_th = float(_s.get("clip_threshold", SAME_THRESHOLD))
     clip_sims = {}
     clip_real_cuts = set()
     if valid_cuts:
         clip_sims = batch_scene_similarities(video_path, valid_cuts,
                                              progress=progress)
         clip_real_cuts = {c for c, sim in clip_sims.items()
-                          if sim is not None and sim < SAME_THRESHOLD}
+                          if sim is not None and sim < clip_th}
 
     # 텍스트 의미 유사도: CLIP 확인된 컷 전후 주제가 바뀌는지 측정.
     # 낮은 유사도 = 주제 전환 = 광고 후보로 우선 고려.
