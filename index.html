@@ -178,14 +178,42 @@
 
   .detail-tog { display:inline-flex; align-items:center; gap:7px; margin-top:16px; cursor:pointer;
                 color:var(--accent); font-size:13px; font-weight:600; user-select:none; }
+
+  /* ── 아이콘 (인라인 svg 픽토그램) ── */
+  .ic { width:1em; height:1em; vertical-align:-0.14em; fill:none; stroke:currentColor;
+        stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  .logo .ic { stroke-width:1.4; color:var(--accent); }
+  .g-icon .ic { stroke-width:1.5; color:var(--accent); }
+  .err-msg .ic, .fps-note .ic { vertical-align:-0.16em; margin-right:2px; }
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+    <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2"/><line x1="5" y1="11" x2="5" y2="22"/><path d="M21 15V2a5 3 0 0 0-3 5v6a2 2 0 0 0 2 2h1zm0 0v7"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  </defs>
+</svg>
+
 <div class="wrap">
 
   <!-- 헤더 -->
   <div class="hdr">
-    <div class="logo">🎬</div>
+    <div class="logo"><svg class="ic"><use href="#i-film"/></svg></div>
     <h1>중간광고 마커 자동화</h1>
     <p>영상을 분석해 광고를 넣기 좋은 지점을 찾아드립니다. 결과는 프리미어 프로용 마커 파일로 바로 내려받을 수 있어요.</p>
   </div>
@@ -196,22 +224,18 @@
       <div class="step-n" id="sn1">1</div>
       <div>
         <div class="step-ttl">영상 파일 선택</div>
-        <div class="step-sub">파일을 끌어다 놓거나 아래 버튼으로 고르세요. 여러 편을 한 번에 넣어도 됩니다.</div>
+        <div class="step-sub">'파일 고르기'를 클릭하여 파일을 선택하세요. 여러 편을 한 번에 넣어도 됩니다.</div>
       </div>
     </div>
 
     <div class="file-actions">
-      <button class="btn btn-primary" onclick="pickFiles()">📂 파일 고르기</button>
-      <button class="btn btn-ghost" onclick="ta.value=''">🗑 모두 지우기</button>
-      <span class="hint">또는 아래 칸에 파일을 드래그하거나 경로를 붙여넣으세요</span>
+      <button class="btn btn-primary" onclick="pickFiles()"><svg class="ic"><use href="#i-folder"/></svg> 파일 고르기</button>
+      <button class="btn btn-ghost" onclick="ta.value=''"><svg class="ic"><use href="#i-trash"/></svg> 모두 지우기</button>
+      <span class="hint">새로운 영상을 분석할 경우 '모두 지우기'를 클릭하세요.</span>
     </div>
 
-    <textarea id="paths" rows="4" placeholder="여기로 영상 파일을 끌어다 놓으면 자동으로 입력됩니다.
-
-직접 입력도 가능합니다:
-/Volumes/AIPP22/슈카월드/SKA_S01_EP31_HD_KR.mp4
-폴더 경로도 가능:  /Volumes/AIPP22/유병재/S30/"></textarea>
-  </div>
+    <textarea id="paths" rows="4" placeholder="'파일 고르기' 또는 경로 복사로 파일을 선택할 수 있습니다."></textarea>
+  </div> 
 
   <!-- STEP 2 : 장르 -->
   <div class="step">
@@ -225,35 +249,35 @@
 
     <div class="genre-grid">
       <div class="genre-card" data-genre="movie" onclick="selectGenre('movie')">
-        <div class="g-icon">🎬</div><div class="g-name">영화</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-film"/></svg></div><div class="g-name">영화</div>
         <div class="g-desc">극영화 · 다큐<br>컷 중심 편집</div>
       </div>
       <div class="genre-card" data-genre="drama" onclick="selectGenre('drama')">
-        <div class="g-icon">📺</div><div class="g-name">드라마</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-tv"/></svg></div><div class="g-name">드라마</div>
         <div class="g-desc">장면 전환 · 대화<br>균형 편집</div>
       </div>
       <div class="genre-card" data-genre="food" onclick="selectGenre('food')">
-        <div class="g-icon">🍽️</div><div class="g-name">푸드</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-utensils"/></svg></div><div class="g-name">푸드</div>
         <div class="g-desc">요리 시연<br>토크 혼합</div>
       </div>
       <div class="genre-card" data-genre="kpop" onclick="selectGenre('kpop')">
-        <div class="g-icon">🎵</div><div class="g-name">케이팝</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-music"/></svg></div><div class="g-name">케이팝</div>
         <div class="g-desc">뮤직비디오<br>무대 · 공연</div>
       </div>
       <div class="genre-card active" data-genre="talk" onclick="selectGenre('talk')">
-        <div class="g-icon">🎙</div><div class="g-name">토크예능</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-mic"/></svg></div><div class="g-name">토크예능</div>
         <div class="g-desc">퀴즈쇼 · 예능<br>토크쇼</div>
       </div>
       <div class="genre-card" data-genre="lecture" onclick="selectGenre('lecture')">
-        <div class="g-icon">📚</div><div class="g-name">강의정보</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-book"/></svg></div><div class="g-name">강의정보</div>
         <div class="g-desc">교육 · 설명<br>정보 채널</div>
       </div>
       <div class="genre-card" data-genre="travel" onclick="selectGenre('travel')">
-        <div class="g-icon">✈️</div><div class="g-name">여행</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-plane"/></svg></div><div class="g-name">여행</div>
         <div class="g-desc">여행 브이로그<br>컷 · 풍경</div>
       </div>
       <div class="genre-card" data-genre="home" onclick="selectGenre('home')">
-        <div class="g-icon">🏠</div><div class="g-name">자취남</div>
+        <div class="g-icon"><svg class="ic"><use href="#i-home"/></svg></div><div class="g-name">자취남</div>
         <div class="g-desc">일상 브이로그<br>요리 · 생활</div>
       </div>
     </div>
@@ -312,7 +336,7 @@
   </div>
 
   <!-- 분석 버튼 -->
-  <button class="go-btn" id="go">분석 시작 ✨</button>
+  <button class="go-btn" id="go"><svg class="ic"><use href="#i-play"/></svg> 분석 시작</button>
   <div id="status" class="status"></div>
 
   <!-- 결과 -->
@@ -426,7 +450,7 @@ async function analyze(){
     renderResults(data);
   }catch(e){
     st.className='status on';
-    st.innerHTML=`<span class="err-msg">⚠ ${esc(e.message)}</span>`;
+    st.innerHTML=`<span class="err-msg"><svg class="ic"><use href="#i-alert"/></svg> ${esc(e.message)}</span>`;
   }finally{
     $('go').disabled=false;
   }
@@ -442,14 +466,14 @@ function renderResults(data){
     h+=`<div class="bulk-bar">
       <span class="bulk-label">총 ${_results.length}편 일괄 다운로드</span>
       <div class="dl-group">
-        <button class="btn-dl" onclick="dlZip(1)">⬇ 1차 XML 전체 (ZIP)</button>
-        <button class="btn-dl alt" onclick="dlZip(2)">⬇ 2차 XML 전체 (ZIP)</button>
+        <button class="btn-dl" onclick="dlZip(1)"><svg class="ic"><use href="#i-download"/></svg> 1차 XML 전체 (ZIP)</button>
+        <button class="btn-dl alt" onclick="dlZip(2)"><svg class="ic"><use href="#i-download"/></svg> 2차 XML 전체 (ZIP)</button>
       </div></div>`;
   }
 
   _results.forEach((d,i)=>{ h+=renderOne(d,i); });
   (data.errors||[]).forEach(e=>{
-    h+=`<div class="res-card"><span class="err-msg">⚠ ${esc(e.path)}<br>${esc(e.error)}</span></div>`;
+    h+=`<div class="res-card"><span class="err-msg"><svg class="ic"><use href="#i-alert"/></svg> ${esc(e.path)}<br>${esc(e.error)}</span></div>`;
   });
   $('result').innerHTML = h||'<div class="res-card err-msg">결과가 없습니다.</div>';
 }
@@ -471,7 +495,7 @@ function renderOne(d, ri){
 
   let h=`<div class="res-card">
     <div class="res-hd">
-      <div class="step-n done">✓</div>
+      <div class="step-n done"><svg class="ic"><use href="#i-check"/></svg></div>
       <div>
         <div class="res-ttl">${esc(d.video_name)}</div>
         <div class="res-meta">${d.duration_tc} · ${d.fps||'?'} fps · 광고 구간 ${d.primary_count}개</div>
@@ -483,8 +507,8 @@ function renderOne(d, ri){
 
   // 다운로드 버튼 (항상 표시)
   h+=`<div class="dl-group">
-    <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml">⬇ 1차 마커 XML (${d.primary_count}구간)</a>
-    <a class="btn-dl alt" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml">⬇ 전체 후보 XML (${d.marker_count}개)</a>
+    <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml"><svg class="ic"><use href="#i-download"/></svg> 1차 마커 XML (${d.primary_count}구간)</a>
+    <a class="btn-dl alt" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml"><svg class="ic"><use href="#i-download"/></svg> 전체 후보 XML (${d.marker_count}개)</a>
   </div>`;
 
   // 타임코드 상세 토글
