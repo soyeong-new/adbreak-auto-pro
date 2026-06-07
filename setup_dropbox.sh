@@ -4,7 +4,7 @@
 #
 # 장르 설정은 genres.json 에서 읽습니다. 수정은 genres.json 만 건드리세요.
 
-BASE="/Volumes/guest1/Public/Drop Box"
+BASE="/Volumes/guest1/Public"
 GENRES_JSON="$(dirname "$0")/genres.json"
 
 if [ ! -f "$GENRES_JSON" ]; then
@@ -23,6 +23,8 @@ PARAM_GUIDE = {
   "first_max"      : "첫 광고 삽입 최대 시간 (분)",
   "gap_min"        : "광고 간 최소 간격 (분)",
   "gap_max"        : "광고 간 최대 간격 (분)",
+  "intro_deadzone" : "영상 시작 광고 제외 구간 (분)",
+  "outro_deadzone" : "영상 종료 광고 제외 구간 (분)",
   "w_scene"        : "장면 전환 가중치 (0~10, 높을수록 화면이 바뀌는 지점 우선)",
   "w_topic_change" : "주제 전환 가중치 (0~10, 높을수록 이야기 내용이 바뀌는 지점 우선)",
   "silence_min"    : "침묵 최소 길이 (초, 낮을수록 짧은 침묵도 감지)",
@@ -30,6 +32,7 @@ PARAM_GUIDE = {
   "fade_require_silence" : "페이드 마커에 침묵을 필수로 요구할지 (영화·드라마·케이팝=false, 배경음 지속 장르)",
   "fade_silence_bonus"   : "페이드에 침묵이 동반될 때 가산점 (케이팝만 >0)",
   "clip_threshold"       : "장면 전환 인정 CLIP 유사도 문턱 (이 값 미만이면 진짜 전환. 기본 0.80, 자취남 0.85)",
+  "w_quiet_cut"          : "조용한 컷 보너스 — 컷 앞뒤 ±2s 안에 침묵이 있으면 BGM 없음 추정 (기본 0, 드라마만 >0)",
 }
 
 for g in genres:
@@ -43,6 +46,8 @@ for g in genres:
         "first_max"      : g["first_max"],
         "gap_min"        : g["gap_min"],
         "gap_max"        : g["gap_max"],
+        "intro_deadzone" : g["intro_deadzone"],
+        "outro_deadzone" : g["outro_deadzone"],
         "w_scene"        : g["w_scene"],
         "w_topic_change" : g["w_topic_change"],
         "silence_min"    : g["silence_min"],
@@ -50,6 +55,7 @@ for g in genres:
         "fade_require_silence" : g["fade_require_silence"],
         "fade_silence_bonus"   : g["fade_silence_bonus"],
         "clip_threshold"       : g["clip_threshold"],
+        "w_quiet_cut"          : g.get("w_quiet_cut", 0),
     }
     out = os.path.join(folder, "settings.json")
     with open(out, "w", encoding="utf-8") as f:

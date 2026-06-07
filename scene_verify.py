@@ -204,3 +204,5 @@ def batch_scene_similarities(video_path, cut_times, offset=0.3,
         json.dump({str(k): v for k, v in results.items()}, f)
 
     return {c: results.get(c) for c in cut_times}
+
+

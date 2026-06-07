@@ -28,7 +28,7 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 |---|---|
 | `app.py` | 로컬 웹 서버 (포트 8000), `/api/analyze` 엔드포인트 |
 | `analyzer.py` | 전체 파이프라인 조율 — `run_analysis()` 진입점 |
-| `pipeline.py` | Whisper 전사 / PySceneDetect 장면 탐지 / ffmpeg 음량 추출 + 캐싱 |
+| `pipeline.py` | Whisper 전사 / PySceneDetect 장면 탐지 / ffmpeg 음량 추출(voice·loudness) + 캐싱 |
 | `local_breaks.py` | 마커 후보 생성(Path 1/2/3) + 점수 계산 + 1차 배치 선발 |
 | `genres.json` | 장르 프리셋 단일 소스 (UI·공유폴더 공통) |
 | `scene_verify.py` | CLIP 장면 전환 검증 (단건 + 배치) |
@@ -66,6 +66,7 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 |---|---|---|
 | CLIP 확인 장면 전환 (`w_scene`) | +8.0 | 1, 2 |
 | 페이드 전환 (`w_fade`) | +8.0(영화) | 3 |
+| BGM 없는 조용한 구간 (`w_quiet_cut`) | +장르별 | 1, 2 |
 | 주제 전환 (텍스트 유사도 < 0.75) | +4.0 | 2 |
 | 강한 전환 표현 | +3.0 | 1, 2 |
 | 마무리 표현 | +2.0 | 1, 2, 3 |
@@ -80,6 +81,8 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 > **2026-06 변경**: CTA 패널티(`p_cta`) 전면 삭제 — 정답 측정 결과 재현에 영향이
 > 없어 전체 패스·전체 장르에서 제거. Path 3(페이드)는 발화 단절로 대사 기반 점수를
 > 제외하고 화면(`w_fade`)·:00 프레임·마무리 표현만 채점.
+> `w_quiet_cut`: loudness_env(전체 주파수 RMS) 기반 BGM 없는 구간 보너스.
+> Path 1·2에 적용. 기본값 0, 드라마=2.0(측정 기반).
 > 설계 경위는 `DESIGN_markers.md` 참조.
 
 ### Path 3(페이드) 침묵 처리 — 장르별
@@ -96,7 +99,8 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 - `*.transcript2.json` — Whisper 전사 (word_timestamps=True)
 - `*.scenes.json` — PySceneDetect 장면 전환
-- `*.voice.json` — 음성 음량 엔벌로프
+- `*.voice.json` — 음성 음량 엔벌로프 (250~3000 Hz, 침묵 판별용)
+- `*.loudness.json` — 전체 주파수 RMS 엔벌로프 (BGM 유무 판별용, `w_quiet_cut`)
 - `*.clip_cuts.json` — 전체 컷 CLIP 유사도
 - `*.text_sim.json` — 텍스트 유사도
 - `*.fades.json` — 페이드 인/아웃 V 꼭짓점 (Path 3)
@@ -131,9 +135,10 @@ rm .cache/{영상명}_{크기}.*               # 전체 재분석
 (setup_dropbox.sh → settings.json)가 모두 이 파일을 읽으므로, 장르 추가·수정 시
 `genres.json`만 고치면 양쪽에 반영된다. 단위는 사람 단위(분·초·점수)로 통일.
 
-키: `w_scene`, `w_topic_change`, `silence_min`(초), `w_fade`,
+키: `w_scene`, `w_topic_change`, `silence_min`(초), `w_fade`, `w_quiet_cut`(점수),
 `fade_require_silence`(bool), `fade_silence_bonus`(점수),
-`clip_threshold`(CLIP 장면전환 문턱, 기본 0.80), 광고 간격(분).
+`clip_threshold`(CLIP 장면전환 문턱, 기본 0.80),
+`intro_deadzone`/`outro_deadzone`(분), 광고 간격(분).
 `_검증상태` 객체로 "임시값/측정됨"을 표기 — 새 장르 데이터가 들어오면 해당 값만
 수정하면 된다.
 

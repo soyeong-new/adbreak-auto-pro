@@ -181,36 +181,36 @@ def collect_mp4s(watch_dir):
     return pending
 
 
-def snapshot(watch_dir):
-    """watch_dir 및 하위 폴더의 전체 파일 목록을 set으로 반환."""
-    result = set()
-    for root, dirs, files in os.walk(watch_dir):
-        dirs[:] = [d for d in dirs if not d.startswith(".")]
-        for fname in files:
-            result.add(os.path.join(root, fname))
-    return result
-
-
 def watch_loop(watch_dir, poll_interval):
-    seen = snapshot(watch_dir)
+    """매 폴링마다 폴더 전체를 전수 검사해 'XML 없는 mp4'를 처리한다.
+
+    이전의 스냅샷 diff(직전 대비 새로 생긴 파일만 감지) 방식은 파일이 없다가
+    생기는 '그 한 사이클'을 놓치면(네트워크 공유 업로드 중 임시이름→최종 .mp4
+    리네임, 워처 시작 시 이미 절반쯤 올라와 있던 파일 등) 영영 다시 보지 않아
+    누락이 발생했다. 전수 검사는 XML이 생길 때까지 매번 다시 확인하므로 누락이 없다.
+    무거운 분석은 어차피 'XML 없는 mp4'에만 도는 건 동일하고, os.walk 비용은
+    기존 snapshot()과 같은 수준이라 부하 차이는 없다.
+    """
     print(f"\n감시 중: {watch_dir} (하위 폴더 포함)", flush=True)
-    print(f"폴링 간격: {poll_interval}초  |  Ctrl+C로 종료\n", flush=True)
+    print(f"폴링 간격: {poll_interval}초 (전수 검사)  |  Ctrl+C로 종료\n", flush=True)
+
+    # 이미 처리 '시도'한 경로. 성공하면 XML이 생겨 collect_mp4s 목록에서 자동으로
+    # 빠지지만, 5분 미만 건너뜀·분석 오류로 XML이 안 생긴 파일은 매 폴링마다
+    # 다시 목록에 잡힌다. 무한 재시도를 막으려 한 번 시도한 경로를 기록한다.
+    attempted = set()
 
     while True:
         time.sleep(poll_interval)
         try:
-            current = snapshot(watch_dir)
+            pending = collect_mp4s(watch_dir)
         except OSError:
             continue
 
-        new_files = current - seen
-        seen = current
-
-        for vpath in sorted(new_files):
-            fname = os.path.basename(vpath)
-            if fname.endswith(".mp4") and not fname.startswith("._"):
-                if not xml_exists(vpath):
-                    process_video(vpath)
+        for vpath in pending:
+            if vpath in attempted:
+                continue
+            attempted.add(vpath)
+            process_video(vpath)
 
 
 def main():

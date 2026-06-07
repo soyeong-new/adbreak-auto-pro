@@ -320,6 +320,14 @@
             <span id="wfvv" class="sl-val">2</span>
           </div>
         </div>
+        <div class="w-item">
+          <label>BGM 없는 구간 점수</label>
+          <div class="w-desc">화면 전환 시 배경음이 없는 조용한 구간을 얼마나 우선할지. 드라마에 효과적입니다.</div>
+          <div class="sl-row">
+            <input id="w_quiet_cut" type="range" min="0" max="10" step="0.5" value="0" oninput="sv('wqcvv',this.value)">
+            <span id="wqcvv" class="sl-val">0</span>
+          </div>
+        </div>
       </div>
 
       <div class="gap-section">
@@ -330,6 +338,8 @@
           <div><div class="t-lbl">첫 광고 최대</div><input id="fmax" type="number" value="10"></div>
           <div><div class="t-lbl">광고 간격 최소</div><input id="gmin" type="number" value="10"></div>
           <div><div class="t-lbl">광고 간격 최대</div><input id="gmax" type="number" value="15"></div>
+          <div><div class="t-lbl">시작 데드존</div><input id="idz" type="number" value="3"></div>
+          <div><div class="t-lbl">끝 데드존</div><input id="odz" type="number" value="3"></div>
         </div>
       </div>
     </div>
@@ -392,6 +402,13 @@ fetch('/genres.json').then(r=>r.json()).then(list=>{
       frs: g.fade_require_silence,           // 페이드 침묵 관문 여부 (전송용)
       fsb: g.fade_silence_bonus,             // 페이드 침묵 보너스 (전송용)
       cth: g.clip_threshold,                 // CLIP 장면전환 문턱 (전송용)
+      wqc: g.w_quiet_cut ?? 0,              // 조용한 컷 보너스 (전송용)
+      fmin: g.first_min,
+      fmax: g.first_max,
+      gmin: g.gap_min,
+      gmax: g.gap_max,
+      idz:  g.intro_deadzone,
+      odz:  g.outro_deadzone,
     };
   });
 });
@@ -399,10 +416,17 @@ function selectGenre(g){
   document.querySelectorAll('.genre-card').forEach(c=>c.classList.remove('active'));
   document.querySelector('[data-genre="'+g+'"]').classList.add('active');
   const p = PRESETS[g];
-  $('w_scene').value=p.ws; $('wsvv').textContent=p.ws;
-  $('w_topic').value=p.wt; $('wtvv').textContent=p.wt;
-  $('sil_min').value=p.sm; $('smvv').textContent=parseFloat(p.sm).toFixed(1)+'초';
-  $('w_fade').value=p.wf;  $('wfvv').textContent=p.wf;
+  $('w_scene').value=p.ws;       $('wsvv').textContent=p.ws;
+  $('w_topic').value=p.wt;       $('wtvv').textContent=p.wt;
+  $('sil_min').value=p.sm;       $('smvv').textContent=parseFloat(p.sm).toFixed(1)+'초';
+  $('w_fade').value=p.wf;        $('wfvv').textContent=p.wf;
+  $('w_quiet_cut').value=p.wqc;  $('wqcvv').textContent=p.wqc;
+  $('fmin').value=p.fmin;
+  $('fmax').value=p.fmax;
+  $('gmin').value=p.gmin;
+  $('gmax').value=p.gmax;
+  $('idz').value=p.idz;
+  $('odz').value=p.odz;
   _activeGenre = g;        // 전송 시 fade_require_silence/bonus 참조
 }
 let _activeGenre = 'talk';
@@ -434,6 +458,8 @@ async function analyze(){
           first_max:      parseFloat($('fmax').value),
           gap_min:        parseFloat($('gmin').value),
           gap_max:        parseFloat($('gmax').value),
+          intro_deadzone: parseFloat($('idz').value),
+          outro_deadzone: parseFloat($('odz').value),
           w_scene:        parseFloat($('w_scene').value),
           w_topic_change: parseFloat($('w_topic').value),
           silence_min:    parseFloat($('sil_min').value),
@@ -441,6 +467,7 @@ async function analyze(){
           fade_require_silence: (PRESETS[_activeGenre]||{}).frs ?? true,
           fade_silence_bonus:   (PRESETS[_activeGenre]||{}).fsb ?? 0,
           clip_threshold:       (PRESETS[_activeGenre]||{}).cth ?? 0.80,
+          w_quiet_cut:          parseFloat($('w_quiet_cut').value),
         }
       })
     });
