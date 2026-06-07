@@ -12,7 +12,6 @@
 캐시 키: {영상명}_{파일크기} — 파일이 교체되면 자동으로 재분석.
 """
 import os
-import re
 import json
 import subprocess
 
@@ -193,8 +192,40 @@ def detect_fade_cuts(video_path, progress=None):
     return fades
 
 
+def extract_loudness_envelope(video_path, progress=None):
+    """Full-spectrum loudness envelope -> {rate, db}. Cached.
+
+    전체 주파수 대역 RMS. voice_env(250~3000 Hz)는 음성 침묵 판별용이라
+    BGM 에너지를 놓친다. 이 함수는 필터 없이 전체 에너지를 측정해
+    BGM 있음/없음 신호로 사용한다.
+    """
+    cached = _load_cache(video_path, "loudness")
+    if cached is not None:
+        return cached
+
+    import numpy as np
+    cmd = ["ffmpeg", "-v", "error", "-i", video_path,
+           "-ac", "1", "-ar", str(SR), "-f", "s16le", "-"]
+    raw = subprocess.run(cmd, capture_output=True).stdout
+    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float64)
+    win = SR // ENV_HZ
+    n = (len(samples) // win) * win
+    if n == 0:
+        return {"rate": ENV_HZ, "db": []}
+    frames = samples[:n].reshape(-1, win)
+    rms = np.sqrt(np.mean(frames ** 2, axis=1))
+    db = 20.0 * np.log10(np.maximum(rms, 1.0) / 32768.0)
+    data = {"rate": ENV_HZ, "db": [round(float(x), 2) for x in db]}
+    _save_cache(video_path, "loudness", data)
+    return data
+
+
 def extract_voice_envelope(video_path, progress=None):
-    """Voice-band (250-3000 Hz) loudness envelope -> {rate, db}. Cached."""
+    """Voice-band (250-3000 Hz) loudness envelope -> {rate, db}. Cached.
+
+    음성 대역(250~3000Hz)만 측정. 음성이 멈추면 낮아지므로 침묵 판별에 사용.
+    BGM이 있어도 음성 대역이 조용하면 낮게 나온다.
+    """
     cached = _load_cache(video_path, "voice")
     if cached is not None:
         return cached
@@ -217,3 +248,55 @@ def extract_voice_envelope(video_path, progress=None):
     data = {"rate": ENV_HZ, "db": [round(float(x), 2) for x in db]}
     _save_cache(video_path, "voice", data)
     return data
+
+
+
+
+
+def extract_diarization(video_path, hf_token=None, progress=None):
+    """화자 구분(diarization) → [(start, end, speaker_id)] 캐시.
+
+    pyannote/speaker-diarization-3.1 사용.
+    hf_token: HuggingFace 토큰. None이면 .env의 HF_TOKEN 사용.
+    캐시: *.diarization.json
+    """
+    cached = _load_cache(video_path, "diarization")
+    if cached is not None:
+        return cached
+
+    if hf_token is None:
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+        if os.path.exists(env_path):
+            for line in open(env_path):
+                if line.startswith("HF_TOKEN="):
+                    hf_token = line.strip().split("=", 1)[1]
+                    break
+
+    if not hf_token:
+        return []
+
+    if progress:
+        progress("화자 구분 분석 중 (pyannote)...")
+
+    import tempfile as _tmp
+
+    with _tmp.TemporaryDirectory() as tmp:
+        wav = os.path.join(tmp, "audio.wav")
+        subprocess.run(
+            ["ffmpeg", "-v", "error", "-i", video_path,
+             "-ac", "1", "-ar", "16000", "-f", "wav", wav],
+            capture_output=True, check=True
+        )
+        from pyannote.audio import Pipeline as _Pipeline
+        pipe = _Pipeline.from_pretrained(
+            "pyannote/speaker-diarization-3.1", token=hf_token
+        )
+        result = pipe(wav)
+        diar = result.speaker_diarization
+        segs = [
+            {"start": round(s.start, 3), "end": round(s.end, 3), "speaker": sp}
+            for s, _, sp in diar.itertracks(yield_label=True)
+        ]
+
+    _save_cache(video_path, "diarization", segs)
+    return segs

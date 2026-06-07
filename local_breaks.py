@@ -33,6 +33,7 @@ DEFAULTS = {
     "gap_min": 600.0,
     "gap_max": 900.0,
     "n_alternatives": 5,       # markers shown per 1st-pass ad slot
+    "w_quiet_cut": 0.0,         # 컷·침묵이 조용한 구간(BGM 없음 추정)에 있을 때 가산점
     # --- v1.1 heuristic toggles. Defaults preserve v1.0 behavior. ---
     # When True, a sentence pair where the next sentence opens with a
     # continuation marker ("근데/사실/그리고/아/음/…") is dropped. A penalty
@@ -264,6 +265,7 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
 
 def select_ad_breaks_local(segments, duration, settings=None,
                            scene_cuts=None, voice_env=None,
+                           loudness_env=None,
                            clip_real_cuts=None, text_sims=None,
                            fade_cuts=None):
     """Return a flat, time-sorted list of every candidate marker.
@@ -301,6 +303,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
     #     (다른 가수 등장 시 페이드인 + 침묵이 강한 신호).
     _fade_req_sil = bool(s.get("fade_require_silence", True))
     _fade_sil_bonus = float(s.get("fade_silence_bonus", 0.0))
+    _w_quiet_cut = float(s.get("w_quiet_cut", 0.0))
 
     # the video's own noise floor -- bottom of the adaptive silence scale
     noise_floor = (_noise_floor(voice_env)
@@ -351,6 +354,21 @@ def select_ad_breaks_local(segments, duration, settings=None,
             sil[1] - sil[0],
             w_scene=_w_scene)
 
+        # Path 1 조용한 구간 보너스: 침묵 마커 위치에서 loudness_env(전체주파수)도
+        # 낮으면 BGM도 없는 것으로 판단해 가산점. loudness 없으면 voice_env 사용.
+        path1_quiet = False
+        if _w_quiet_cut:
+            env = loudness_env if (loudness_env and loudness_env.get("db")) \
+                  else (voice_env if (voice_env and voice_env.get("db")) else None)
+            if env:
+                loud_nf = _noise_floor(env)
+                # 침묵 마커 자체가 이미 조용한 구간이지만 loudness 기준으로 재확인
+                loud_sil = _find_silence(env, marker_time - 1.0, marker_time + 1.0,
+                                         loud_nf, min_dur=0.3)
+                if loud_sil is not None:
+                    sc += _w_quiet_cut
+                    path1_quiet = True
+
         # v1.1 exclusion: optional, off by default. exclude_* tells the
         # detector to drop markers whose kill_reason matches.
         if kill_reason == "continuation" and s.get("exclude_continuation"):
@@ -374,6 +392,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
         }
         if clip_preconfirmed:
             m["clip_preconfirmed"] = True
+        if path1_quiet:
+            m["quiet_cut"] = True
         markers.append(m)
 
     # ------------------------------------------------------------------
@@ -447,6 +467,21 @@ def select_ad_breaks_local(segments, duration, settings=None,
                     sc += _w_topic
                     topic_change = True
 
+            # 조용한 컷 보너스: 전체 주파수 loudness가 낮으면 BGM 없음으로 판단.
+            # loudness_env(전체 대역) vs voice_env(250~3000Hz 음성 대역)을 비교해
+            # 음성은 없는데 BGM이 있으면 loudness가 높게 나오는 원리.
+            quiet_cut = False
+            if _w_quiet_cut:
+                env = loudness_env if (loudness_env and loudness_env.get("db")) \
+                      else (voice_env if (voice_env and voice_env.get("db")) else None)
+                if env:
+                    loud_nf = _noise_floor(env)
+                    sil = _find_silence(env, marker_time - 2.0, marker_time + 2.0,
+                                        loud_nf, min_dur=0.5)
+                    if sil is not None:
+                        sc += _w_quiet_cut
+                        quiet_cut = True
+
             reason_prefix = "장면 컷 앵커 (CLIP 확인) · Whisper 문장 경계 확인"
             if text_sim is not None:
                 sim_tag = f"주제 전환({text_sim:.2f})" if topic_change else f"주제 유지({text_sim:.2f})"
@@ -475,6 +510,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
             if text_sim is not None:
                 m["text_sim"] = text_sim
                 m["topic_change"] = topic_change
+            if quiet_cut:
+                m["quiet_cut"] = True
             markers.append(m)
             covered.add(marker_time)
 

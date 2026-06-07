@@ -15,7 +15,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 from pipeline import (get_duration, get_fps, transcribe, detect_scenes,
-                      extract_voice_envelope, detect_fade_cuts)
+                      extract_voice_envelope, extract_loudness_envelope,
+                      detect_fade_cuts)
 from local_breaks import select_ad_breaks_local, pick_primary, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
@@ -84,12 +85,14 @@ def run_analysis(video_path, settings=None, progress=None):
     with ThreadPoolExecutor(max_workers=4) as pool:
         f_segments = pool.submit(transcribe, video_path, progress)
         f_scenes = pool.submit(detect_scenes, video_path, progress)
-        f_voice = pool.submit(extract_voice_envelope, video_path, progress)
-        f_fades = pool.submit(detect_fade_cuts, video_path, progress)
-        segments = f_segments.result()
-        scenes = f_scenes.result()
-        voice = f_voice.result()
-        fades = f_fades.result()
+        f_voice    = pool.submit(extract_voice_envelope,    video_path, progress)
+        f_loudness = pool.submit(extract_loudness_envelope, video_path, progress)
+        f_fades    = pool.submit(detect_fade_cuts,          video_path, progress)
+        segments  = f_segments.result()
+        scenes    = f_scenes.result()
+        voice     = f_voice.result()
+        loudness  = f_loudness.result()
+        fades     = f_fades.result()
 
     # Batch CLIP: confirm which scene cuts are genuine transitions (cached).
     # Used to upgrade silence-based markers within SCENE_RADIUS_CLIP of a
@@ -121,6 +124,7 @@ def run_analysis(video_path, settings=None, progress=None):
         progress("광고 지점 후보 탐색 중...")
     markers = select_ad_breaks_local(segments, duration, settings,
                                      scene_cuts=scenes, voice_env=voice,
+                                     loudness_env=loudness,
                                      clip_real_cuts=clip_real_cuts,
                                      text_sims=text_sims,
                                      fade_cuts=fades)

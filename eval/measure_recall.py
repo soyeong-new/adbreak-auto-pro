@@ -35,11 +35,14 @@ TOL = 5.0  # 정답 ±5초 안에 마커가 있으면 hit (measure_regression.py
 MIN_KEYS = ("first_min", "first_max", "gap_min", "gap_max",
             "intro_deadzone", "outro_deadzone")
 FLOAT_KEYS = ("w_scene", "w_topic_change", "w_fade", "fade_silence_bonus",
-              "clip_threshold", "silence_min")
+              "clip_threshold", "silence_min", "w_quiet_cut")
 BOOL_KEYS = ("fade_require_silence",)
 
 # 장르 → 정답 소스. 새 장르 정답이 들어오면 여기 한 줄 추가.
-GT_TXT = {"자취남": "jcn_ground_truth.txt", "home": "jcn_ground_truth.txt"}
+GT_TXT = {
+    "자취남": "jcn_ground_truth.txt", "home": "jcn_ground_truth.txt",
+    "드라마": "drama_ground_truth.txt", "drama": "drama_ground_truth.txt",
+}
 
 
 def hms_to_sec(s):
@@ -51,14 +54,19 @@ def hms_to_sec(s):
 
 
 def load_gt_txt(path):
-    """'EPISODE  HH:MM:SS, HH:MM:SS' 형식 → {episode: [seconds]}."""
+    """'EPISODE<탭 또는 2+공백>HH:MM:SS, HH:MM:SS' 형식 → {episode: [seconds]}.
+    에피소드명에 공백이 포함된 경우 탭 구분자 사용."""
+    import re
     gt = {}
     for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        ep, _, times = line.partition(" ")
-        secs = [hms_to_sec(t) for t in times.split(",") if t.strip()]
+        parts = re.split(r'\t|\s{2,}', line, maxsplit=1)
+        if len(parts) < 2:
+            continue
+        ep, times_str = parts[0].strip(), parts[1].strip()
+        secs = [hms_to_sec(t) for t in times_str.split(",") if t.strip()]
         if secs:
             gt[ep] = secs
     return gt
@@ -123,6 +131,7 @@ def load_inputs(stem):
     segs = j("transcript2")["segments"]
     scenes = j("scenes")["scenes"]
     voice = j("voice")
+    loudness = j("loudness")
     fades = (j("fades") or {}).get("fades", [])
     clip = {float(k): v for k, v in (j("clip_cuts") or {}).items()}
     tsim = {float(k): v for k, v in (j("text_sim") or {}).items()}
@@ -131,15 +140,16 @@ def load_inputs(stem):
         dur = max(dur, segs[-1]["end"])
     if voice and voice.get("db"):
         dur = max(dur, len(voice["db"]) / voice["rate"])
-    return segs, dur, scenes, voice, clip, tsim, fades
+    return segs, dur, scenes, voice, loudness, clip, tsim, fades
 
 
 def run_one(stem, settings):
-    segs, dur, scenes, voice, clip, tsim, fades = load_inputs(stem)
+    segs, dur, scenes, voice, loudness, clip, tsim, fades = load_inputs(stem)
     clip_th = float(settings.get("clip_threshold", SAME_THRESHOLD))
     clip_real = {c for c, s in clip.items() if s is not None and s < clip_th}
     markers = select_ad_breaks_local(segs, dur, settings, scene_cuts=scenes,
-                                     voice_env=voice, clip_real_cuts=clip_real,
+                                     voice_env=voice, loudness_env=loudness,
+                                     clip_real_cuts=clip_real,
                                      text_sims=tsim, fade_cuts=fades)
     slots = pick_primary(markers, dur, settings)
     primary = [m for slot in slots for m in slot]
