@@ -489,9 +489,10 @@ function renderResults(data){
   let h='';
 
   // 일괄 다운로드 (2편 이상)
-  if(_results.length>1){
+  const downloadable = _results.filter(d=>!d.skipped_short);
+  if(downloadable.length>1){
     h+=`<div class="bulk-bar">
-      <span class="bulk-label">총 ${_results.length}편 일괄 다운로드</span>
+      <span class="bulk-label">총 ${downloadable.length}편 일괄 다운로드</span>
       <div class="dl-group">
         <button class="btn-dl" onclick="dlZip(1)"><svg class="ic"><use href="#i-download"/></svg> 1차 XML 전체 (ZIP)</button>
         <button class="btn-dl alt" onclick="dlZip(2)"><svg class="ic"><use href="#i-download"/></svg> 2차 XML 전체 (ZIP)</button>
@@ -507,7 +508,12 @@ function renderResults(data){
 
 async function dlZip(pass){
   const zip=new JSZip();
-  _results.forEach(d=>{
+  const downloadable = _results.filter(d=>!d.skipped_short);
+  if(!downloadable.length){
+    alert('5분 미만 영상은 XML을 생성하지 않으므로 다운로드할 파일이 없습니다.');
+    return;
+  }
+  downloadable.forEach(d=>{
     const s=d.video_name.replace(/\.[^.]+$/,'');
     zip.file(s+(pass===1?'_adbreaks.xml':'_adbreaks_all.xml'), pass===1?d.xml_primary:d.xml_all);
   });
@@ -532,11 +538,14 @@ function renderOne(d, ri){
   if(d.fps&&!near)
     h+=`<div class="fps-note">⚠ 이 영상은 ${d.fps} fps입니다. 마커는 30fps 기준으로 계산되므로, 프리미어에서 30fps 시퀀스로 변환 후 임포트하세요.</div>`;
 
-  // 다운로드 버튼 (항상 표시)
-  h+=`<div class="dl-group">
-    <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml"><svg class="ic"><use href="#i-download"/></svg> 1차 마커 XML (${d.primary_count}구간)</a>
-    <a class="btn-dl alt" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml"><svg class="ic"><use href="#i-download"/></svg> 전체 후보 XML (${d.marker_count}개)</a>
-  </div>`;
+  if(d.skipped_short){
+    h+=`<div class="notice-msg">이 영상은 5분 미만이므로 XML을 생성하지 않습니다.</div>`;
+  } else {
+    h+=`<div class="dl-group">
+      <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml"><svg class="ic"><use href="#i-download"/></svg> 1차 마커 XML (${d.primary_count}구간)</a>
+      <a class="btn-dl alt" href="${blobUrl(d.xml_all)}" download="${stem}_adbreaks_all.xml"><svg class="ic"><use href="#i-download"/></svg> 전체 후보 XML (${d.marker_count}개)</a>
+    </div>`;
+  }
 
   // 타임코드 상세 토글
   h+=`<div class="detail-tog" onclick="togDetail(${ri})">

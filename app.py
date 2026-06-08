@@ -18,6 +18,7 @@ import sys
 import shutil
 
 from analyzer import run_analysis
+from pipeline import get_duration
 
 DEFAULT_PORT = 8000
 
@@ -176,6 +177,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         for idx, video in enumerate(videos, 1):
             try:
                 print(f"\n[{idx}/{len(videos)} 분석 시작] {video}", flush=True)
+                duration = get_duration(video)
+                if duration < 300:
+                    mins = duration / 60
+                    print(f"[{idx}/{len(videos)} 건너뜀] 영상 길이 {mins:.1f}분 — 5분 미만은 분석하지 않습니다.", flush=True)
+                    results.append({
+                        "video_path": video,
+                        "video_name": os.path.basename(video),
+                        "duration": duration,
+                        "skipped_short": True,
+                        "primary_count": 0,
+                        "marker_count": 0,
+                        "primary_slots": [],
+                        "markers": [],
+                        "xml_primary": "",
+                        "xml_all": "",
+                    })
+                    continue
                 report = run_analysis(video, settings or None,
                                       progress=lambda m: print(f"  · {m}", flush=True))
                 stem = os.path.splitext(report["video_name"])[0]
