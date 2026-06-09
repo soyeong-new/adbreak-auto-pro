@@ -21,7 +21,7 @@ from local_breaks import select_ad_breaks_local, pick_primary, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
 from xml_output import build_candidate_xml
-from framecode import seconds_to_timecode
+from framecode import seconds_to_timecode, FPS as DEFAULT_FPS
 
 
 def _verify(video_path, markers, progress=None):
@@ -75,7 +75,18 @@ def run_analysis(video_path, settings=None, progress=None):
         raise FileNotFoundError(video_path)
 
     duration = get_duration(video_path)
-    fps = get_fps(video_path)
+    detected_fps = get_fps(video_path)
+
+    # fps_mode: "auto" → 영상 FPS 그대로, 숫자 문자열/float → 강제 지정.
+    # watcher는 설정값 없이 호출 → 기본 30fps 고정.
+    fps_mode = (settings or {}).get("fps_mode", "30")
+    if fps_mode == "auto":
+        fps = detected_fps or DEFAULT_FPS
+    else:
+        try:
+            fps = float(fps_mode)
+        except (TypeError, ValueError):
+            fps = DEFAULT_FPS
 
     # Stages 2-4 (자막 변환 · 장면 감지 · 음성 분석) are independent — they each
     # read the video on their own and don't use each other's output, so we run
@@ -127,7 +138,8 @@ def run_analysis(video_path, settings=None, progress=None):
                                      loudness_env=loudness,
                                      clip_real_cuts=clip_real_cuts,
                                      text_sims=text_sims,
-                                     fade_cuts=fades)
+                                     fade_cuts=fades,
+                                     fps=fps)
 
     # Attach batch CLIP similarity to clip_preconfirmed markers.
     for m in markers:
@@ -157,8 +169,9 @@ def run_analysis(video_path, settings=None, progress=None):
         "video_path": video_path,
         "video_name": os.path.basename(video_path),
         "duration": duration,
-        "duration_tc": seconds_to_timecode(duration),
-        "fps": round(fps, 3) if fps else None,
+        "duration_tc": seconds_to_timecode(duration, fps),
+        "fps": round(fps, 3),
+        "fps_detected": round(detected_fps, 3) if detected_fps else None,
         "segments_count": len(segments),
         "scenes_count": len(scenes),
         "marker_count": len(markers),
@@ -167,6 +180,6 @@ def run_analysis(video_path, settings=None, progress=None):
         "reference_count": sum(1 for m in markers if not m["has_cut"]),
         "primary_slots": primary_slots,
         "markers": markers,
-        "xml_primary": build_candidate_xml(primary_flat, video_path, duration),
-        "xml_all": build_candidate_xml(cut_anchor_markers, video_path, duration),
+        "xml_primary": build_candidate_xml(primary_flat, video_path, duration, fps),
+        "xml_all": build_candidate_xml(cut_anchor_markers, video_path, duration, fps),
     }

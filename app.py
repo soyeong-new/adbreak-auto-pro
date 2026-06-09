@@ -136,6 +136,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if val is not None:
             settings["fade_require_silence"] = bool(val)
 
+        # fps_mode: "30" | "24" | "29.97" | "auto"
+        fps_mode = data.get("fps_mode", "30")
+        settings["fps_mode"] = str(fps_mode)
+
         # A path may be an absolute file/folder, or a bare filename dragged in;
         # bare filenames are resolved by searching the base folder ('root').
         root = (data.get("root") or "").strip()

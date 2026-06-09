@@ -345,6 +345,25 @@
     </div>
   </div>
 
+  <!-- STEP 3 : 마커 FPS -->
+  <div class="step">
+    <div class="step-hd">
+      <div class="step-n" id="sn3">3</div>
+      <div>
+        <div class="step-ttl">마커 FPS</div>
+        <div class="step-sub">XML 마커를 몇 fps 기준으로 생성할지 선택합니다. 대부분의 경우 30fps를 사용하세요.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="radio" name="fps_mode" value="30" checked> 30fps (기본값)
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="radio" name="fps_mode" value="auto"> 자동 감지 (영상 FPS 그대로)
+      </label>
+    </div>
+  </div>
+
   <!-- 분석 버튼 -->
   <button class="go-btn" id="go"><svg class="ic"><use href="#i-play"/></svg> 분석 시작</button>
   <div id="status" class="status"></div>
@@ -453,6 +472,7 @@ async function analyze(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         video_paths: paths,
+        fps_mode: document.querySelector('input[name="fps_mode"]:checked').value,
         settings:{
           first_min:      parseFloat($('fmin').value),
           first_max:      parseFloat($('fmax').value),
@@ -523,20 +543,19 @@ async function dlZip(pass){
 }
 
 function renderOne(d, ri){
-  const near = d.fps&&Math.abs(d.fps-30)<0.05;
   const stem = d.video_name.replace(/\.[^.]+$/,'');
+  const fpsLabel = d.fps_detected && Math.abs(d.fps - d.fps_detected) > 0.05
+    ? `마커 ${d.fps}fps (영상 ${d.fps_detected}fps)`
+    : `${d.fps||'?'}fps`;
 
   let h=`<div class="res-card">
     <div class="res-hd">
       <div class="step-n done"><svg class="ic"><use href="#i-check"/></svg></div>
       <div>
         <div class="res-ttl">${esc(d.video_name)}</div>
-        <div class="res-meta">${d.duration_tc} · ${d.fps||'?'} fps · 광고 구간 ${d.primary_count}개</div>
+        <div class="res-meta">${d.duration_tc} · ${fpsLabel} · 광고 구간 ${d.primary_count}개</div>
       </div>
     </div>`;
-
-  if(d.fps&&!near)
-    h+=`<div class="fps-note">⚠ 이 영상은 ${d.fps} fps입니다. 마커는 30fps 기준으로 계산되므로, 프리미어에서 30fps 시퀀스로 변환 후 임포트하세요.</div>`;
 
   if(d.skipped_short){
     h+=`<div class="notice-msg">이 영상은 5분 미만이므로 XML을 생성하지 않습니다.</div>`;
