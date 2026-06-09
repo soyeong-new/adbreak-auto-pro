@@ -22,7 +22,8 @@ import re
 import math
 from topic_breaks import build_sentences
 from framecode import (FPS, FF_TOP, _ff_candidate, _ff_allowed, _base,
-                       frame_to_seconds, frame_tier, frame_to_timecode)
+                       frame_to_seconds, frame_tier, frame_to_timecode,
+                       _df_frame_ff)
 from patterns import starts_with_continuation
 
 DEFAULTS = {
@@ -159,17 +160,22 @@ def _find_silence(voice_env, t0, t1, noise_floor, min_dur=None):
     return None
 
 
-def _allowed_frame_in(s0, s1, fps=FPS):
-    """Pick an allowed frame inside the silence [s0, s1]: the earliest
-    :00 frame if the silence holds one, else the earliest candidate frame.
-    None if the silence is too short to contain any allowed frame."""
+def _get_ff(frame, fps, drop_frame):
+    """프레임의 FF(초 안 위치) 반환. DF면 SMPTE DF 공식 사용."""
+    if drop_frame and abs(fps - 29.97) < 0.1:
+        return _df_frame_ff(frame)
+    return frame % _base(fps)
+
+
+def _allowed_frame_in(s0, s1, fps=FPS, drop_frame=False):
+    """침묵 [s0, s1] 안의 허용 프레임 반환. :00 우선, 없으면 :01~:03/끝 2프레임."""
     f0 = math.ceil(s0 * fps)
     f1 = math.floor(s1 * fps)
-    ff_cand = _ff_candidate(fps)
-    b = _base(fps)
+    b       = _base(fps)
+    ff_cand = {1, 2, 3, b - 2, b - 1}
     cand = None
     for f in range(f0, f1 + 1):
-        ff = f % b
+        ff = _get_ff(f, fps, drop_frame)
         if ff in FF_TOP:
             return f
         if cand is None and ff in ff_cand:
@@ -177,19 +183,18 @@ def _allowed_frame_in(s0, s1, fps=FPS):
     return cand
 
 
-def _nearest_allowed_frame(t, fps=FPS):
-    """장면 컷 시간 t가 허용 프레임에 정확히 해당할 때만 반환.
-
-    컷이 허용 프레임이 아니면 None 반환 → 마커 생성 안 함. 스냅 없음.
-    """
+def _nearest_allowed_frame(t, fps=FPS, drop_frame=False):
+    """장면 컷 시간 t가 허용 프레임에 정확히 해당할 때만 반환. 스냅 없음."""
     f_center = int(round(t * fps))
-    if f_center % _base(fps) in _ff_allowed(fps):
+    ff = _get_ff(f_center, fps, drop_frame)
+    b  = _base(fps)
+    if ff in FF_TOP | {1, 2, 3, b - 2, b - 1}:
         return f_center
     return None
 
 
 def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
-           w_scene=W_SCENE, fade_mode=False, fps=FPS):
+           w_scene=W_SCENE, fade_mode=False, fps=FPS, drop_frame=False):
     """Score a marker. Returns (score, reasons, has_signal, kill_reason).
 
     Every marker already sits in a verified silence after a completed sentence;
@@ -250,7 +255,7 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
         score += W_PAUSE
         reasons.append(f"긴 침묵({silence_len:.1f}초)")
 
-    if frame % _base(fps) == 0:
+    if _get_ff(frame, fps, drop_frame) == 0:
         score += W_FRAME_TOP
         reasons.append("최우선 :00 프레임")
 
@@ -269,7 +274,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                            scene_cuts=None, voice_env=None,
                            loudness_env=None,
                            clip_real_cuts=None, text_sims=None,
-                           fade_cuts=None, fps=FPS):
+                           fade_cuts=None, fps=FPS, drop_frame=False):
     """Return a flat, time-sorted list of every candidate marker.
 
     Each: {time, frame, timecode, tier, has_cut, has_signal, score, reason,
@@ -327,7 +332,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
         if sil is None:
             continue
         # Place the marker on an allowed frame *inside* that silence.
-        frame = _allowed_frame_in(*sil, fps=fps)
+        frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame)
         if frame is None:                      # silence holds no allowed frame
             continue
         marker_time = frame_to_seconds(frame, fps)
@@ -350,11 +355,11 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 has_cut, cut_dist = True, dist
                 clip_preconfirmed = True
 
-        tier = frame_tier(frame, fps)
+        tier = frame_tier(frame, fps, drop_frame)
         sc, reasons, signal, kill_reason = _score(
             ended["text"], nxt["text"], frame, has_cut, cut_dist,
             sil[1] - sil[0],
-            w_scene=_w_scene, fps=fps)
+            w_scene=_w_scene, fps=fps, drop_frame=drop_frame)
 
         # Path 1 조용한 구간 보너스: 침묵 마커 위치에서 loudness_env(전체주파수)도
         # 낮으면 BGM도 없는 것으로 판단해 가산점. loudness 없으면 voice_env 사용.
@@ -382,7 +387,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
         m = {
             "time": marker_time,
             "frame": frame,
-            "timecode": frame_to_timecode(frame, fps),
+            "timecode": frame_to_timecode(frame, fps, drop_frame),
             "tier": tier,
             "has_cut": has_cut,
             "has_signal": signal,
@@ -434,7 +439,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 continue  # 컷이 문장/세그먼트 중간에 있음 → 건너뜀
 
             # 마커를 컷 시간에서 가장 가까운 허용 프레임(:00/:01/:02/:03/:28/:29)에 배치.
-            frame = _nearest_allowed_frame(cut_t, fps)
+            frame = _nearest_allowed_frame(cut_t, fps, drop_frame)
             if frame is None:
                 continue
             marker_time = frame_to_seconds(frame, fps)
@@ -459,7 +464,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
             sc, reasons, signal, kill_reason = _score(
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0, silence_len=0.0,
-                w_scene=_w_scene, fps=fps)
+                w_scene=_w_scene, fps=fps, drop_frame=drop_frame)
 
             # 텍스트 의미 유사도: 낮을수록 주제 전환 가능성 높음.
             text_sim = (text_sims or {}).get(cut_t)
@@ -498,8 +503,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
             m = {
                 "time": marker_time,
                 "frame": frame,
-                "timecode": frame_to_timecode(frame, fps),
-                "tier": frame_tier(frame, fps),
+                "timecode": frame_to_timecode(frame, fps, drop_frame),
+                "tier": frame_tier(frame, fps, drop_frame),
                 "has_cut": True,
                 "has_signal": signal,
                 "score": round(sc, 2),
@@ -570,10 +575,10 @@ def select_ad_breaks_local(segments, duration, settings=None,
 
             # 프레임 배치: 침묵이 있으면 그 침묵 안에, 없으면 V 꼭짓점 최근접 허용 프레임.
             if sil is not None:
-                frame = _allowed_frame_in(*sil, fps=fps)
+                frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame)
                 silence_len = sil[1] - sil[0]
             else:
-                frame = _nearest_allowed_frame(fade_t, fps)
+                frame = _nearest_allowed_frame(fade_t, fps, drop_frame)
                 silence_len = 0.0
             if frame is None:
                 continue
@@ -605,7 +610,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0,
                 silence_len=silence_len,
-                w_scene=_w_fade, fade_mode=True, fps=fps)
+                w_scene=_w_fade, fade_mode=True, fps=fps, drop_frame=drop_frame)
 
             # 케이팝 등: 페이드 + 침묵 동반 시 가산 (다른 가수 등장 페이드인 신호).
             if sil is not None and _fade_sil_bonus:
@@ -623,8 +628,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
             m = {
                 "time": marker_time,
                 "frame": frame,
-                "timecode": frame_to_timecode(frame, fps),
-                "tier": frame_tier(frame, fps),
+                "timecode": frame_to_timecode(frame, fps, drop_frame),
+                "tier": frame_tier(frame, fps, drop_frame),
                 "has_cut": True,
                 "has_signal": signal,
                 "score": round(sc, 2),

@@ -77,11 +77,16 @@ def run_analysis(video_path, settings=None, progress=None):
     duration = get_duration(video_path)
     detected_fps = get_fps(video_path)
 
-    # fps_mode: "auto" → 영상 FPS 그대로, 숫자 문자열/float → 강제 지정.
-    # watcher는 설정값 없이 호출 → 기본 30fps 고정.
-    fps_mode = (settings or {}).get("fps_mode", "30")
+    # fps_mode: "auto" | "30" | "29.97_ndf" | "29.97_df"
+    # watcher는 설정값 없이 호출 → 기본 30fps NDF 고정.
+    fps_mode   = (settings or {}).get("fps_mode", "30")
+    drop_frame = False
     if fps_mode == "auto":
         fps = detected_fps or DEFAULT_FPS
+    elif fps_mode == "29.97_df":
+        fps, drop_frame = 29.97, True
+    elif fps_mode == "29.97_ndf":
+        fps = 29.97
     else:
         try:
             fps = float(fps_mode)
@@ -139,7 +144,7 @@ def run_analysis(video_path, settings=None, progress=None):
                                      clip_real_cuts=clip_real_cuts,
                                      text_sims=text_sims,
                                      fade_cuts=fades,
-                                     fps=fps)
+                                     fps=fps, drop_frame=drop_frame)
 
     # Attach batch CLIP similarity to clip_preconfirmed markers.
     for m in markers:
@@ -169,7 +174,7 @@ def run_analysis(video_path, settings=None, progress=None):
         "video_path": video_path,
         "video_name": os.path.basename(video_path),
         "duration": duration,
-        "duration_tc": seconds_to_timecode(duration, fps),
+        "duration_tc": seconds_to_timecode(duration, fps, drop_frame),
         "fps": round(fps, 3),
         "fps_detected": round(detected_fps, 3) if detected_fps else None,
         "segments_count": len(segments),
@@ -180,6 +185,6 @@ def run_analysis(video_path, settings=None, progress=None):
         "reference_count": sum(1 for m in markers if not m["has_cut"]),
         "primary_slots": primary_slots,
         "markers": markers,
-        "xml_primary": build_candidate_xml(primary_flat, video_path, duration, fps),
-        "xml_all": build_candidate_xml(cut_anchor_markers, video_path, duration, fps),
+        "xml_primary": build_candidate_xml(primary_flat, video_path, duration, fps, drop_frame),
+        "xml_all": build_candidate_xml(cut_anchor_markers, video_path, duration, fps, drop_frame),
     }

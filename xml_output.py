@@ -28,10 +28,10 @@ def _marker_xml(name, comment, frame):
     )
 
 
-def build_candidate_xml(markers, video_path, duration, fps=30.0):
+def build_candidate_xml(markers, video_path, duration, fps=30.0, drop_frame=False):
     """markers: flat list from select_ad_breaks_local. Returns xmeml XML."""
     base = os.path.splitext(os.path.basename(video_path))[0] if video_path else "ad_breaks"
-    timebase, ntsc = xml_timebase_ntsc(fps)
+    timebase, ntsc = xml_timebase_ntsc(fps, drop_frame)
 
     marker_xmls = []
     last_frame = 0
