@@ -136,7 +136,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if val is not None:
             settings["fade_require_silence"] = bool(val)
 
-        # fps_mode: "30" | "24" | "29.97" | "auto"
+        # fps_mode: "auto" | "30" | "29.97_ndf" | "29.97_df"
         fps_mode = data.get("fps_mode", "30")
         settings["fps_mode"] = str(fps_mode)
 
@@ -200,7 +200,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     continue
                 report = run_analysis(video, settings or None,
                                       progress=lambda m: print(f"  · {m}", flush=True))
-                stem = os.path.splitext(report["video_name"])[0]
                 print(f"[{idx}/{len(videos)} 완료] 1차 {report['primary_count']}구간 / "
                       f"전체 {report['marker_count']}개",
                       flush=True)

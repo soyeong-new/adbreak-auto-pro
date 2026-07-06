@@ -38,9 +38,8 @@ import json
 import math
 import os
 import re
-import sys
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(EVAL_DIR)

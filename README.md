@@ -97,6 +97,7 @@
 | 주제 전환 (텍스트 유사도 < 0.75) | 장르별 | 2 | 전후 내용이 달라짐 |
 | 강한 화제 전환 표현 | +3.0 | 1, 2 | 다음 문장이 "자 이제 / 다음으로 / 마지막으로…"로 시작 |
 | 마무리 표현 | +2.0 | 1, 2, 3 | 앞 문장이 "겠습니다 / 이상입니다…"로 종료 |
+| 페이드 + 침묵 동반 (`fade_silence_bonus`) | 장르별(케이팝만 >0) | 3 | 페이드 인/아웃 지점에 침묵까지 겹치면 가산점 |
 | :00 프레임 | +1.0 | 1, 2, 3 | 최우선 허용 프레임 위치 |
 | 약한 전환 표현 | +1.0 | 1, 2 | 다음 문장이 "자 / 이제 / 그러면…"으로 시작 |
 | CLIP 재검증 실패 | −8.0 | 1 | 장면 전환 아님으로 판정 |
@@ -133,13 +134,14 @@ vscode/
     ├── scene_verify.py      CLIP 장면 전환 검증 (단건 + 배치)
     ├── text_similarity.py   한국어 텍스트 유사도 (ko-sroberta-multitask)
     ├── topic_breaks.py      Whisper 세그먼트 → 문장 병합 (한국어 종결어미 기반)
-    ├── patterns.py          한국어 패턴 감지 (CTA, 연속 표현, 오프너/클로저)
+    ├── patterns.py          한국어 발화 지속 표현(연결어) 감지
     ├── framecode.py         타임코드/프레임 변환, 허용 프레임 정의 (30fps)
     ├── xml_output.py        Premiere용 FCP7 XML 생성
     ├── ground_truth.txt     평가용 정답 데이터 (에피소드별 광고 타임코드)
     └── eval/
         ├── analyze_episodes.py   에피소드 일괄 분석 스크립트
         ├── load_ground_truth.py  ground_truth.txt → JSON 변환
+        ├── measure_recall.py     장르별 설정 재현율 측정 (장르 튜닝용 핵심 도구)
         ├── extract_features.py   XML 마커에서 피처 행렬 추출 (features.json/csv)
         ├── train_score.py        5-fold CV 평가 (Logistic Regression + Random Forest)
         ├── ground_truth.json     변환된 정답 데이터
@@ -232,25 +234,25 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 ---
 
-### 구글 드라이브 자동 감시 (팀 공유)
+### SMB 공유 폴더 자동 감시 (팀 공유)
 
-팀원이 구글 드라이브 폴더에 영상을 올리면 자동으로 분석하고 XML을 같은 폴더에 저장합니다.
+팀원이 SMB 공유 폴더에 영상을 올리면 자동으로 분석하고 XML을 같은 폴더에 저장합니다.
 
-**공유 폴더**: https://drive.google.com/drive/u/0/folders/1CjkqNk8ZJUsCZ7zDlfBHZMsth3BvcDEB  
-**로컬 동기화 경로**: `/Users/choisoyeong/Library/CloudStorage/GoogleDrive-so-yeong@its-newid.com/내 드라이브/AD Break`
+**공유 폴더**: `/Volumes/guest1/Public` (SMB 마운트)
 
-**실행 방법 1 — 더블클릭**  
-`start_watcher.command` 파일을 더블클릭하면 터미널이 열리면서 자동 실행됩니다.
+**실행 방법 1 — start_watcher.command**  
+로컬 서버(html UI)와 watcher 두 명령이 모두 들어있는 참고용 스크립트입니다.
+watcher만 실행하려면 `# 로컬` 블록을 주석 처리한 뒤 더블클릭하세요.
 
 **실행 방법 2 — 터미널 직접 입력**
 
 ```bash
 cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
-../.venv/bin/python watcher.py "/Users/choisoyeong/Library/CloudStorage/GoogleDrive-so-yeong@its-newid.com/내 드라이브/AD Break"
+../.venv/bin/python watcher.py "/Volumes/guest1/Public"
 ```
 
 > 컴퓨터가 켜져 있고 watcher가 실행 중인 동안만 자동 처리됩니다.  
-> 팀원은 구글 드라이브 링크에서 영상 업로드만 하면 되고, 별도 설치 불필요합니다.
+> 장르별 폴더 및 `settings.json`은 `setup_dropbox.sh` 실행으로 미리 생성해둡니다.
 
 ---
 
@@ -334,7 +336,26 @@ rm .cache/{영상명}_{크기}.*             # 해당 영상 전체 재분석
 
 ## 평가 워크플로
 
-ML 피처 분석 및 모델 성능 측정이 필요할 때 사용합니다.
+### 장르별 가중치 튜닝 — `measure_recall.py`
+
+`genres.json`의 장르별 값(`clip_threshold` 등)을 조정할 때 실제로 쓰는 도구입니다.
+local_breaks.py를 그대로 재실행해서 생성된 마커 시각과 정답(ground truth) 시각을
+비교해 재현율을 잽니다 (XML 재파싱 없이 직접 비교).
+
+```bash
+cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
+
+# 현재 genres.json 기준 재현율
+../.venv/bin/python eval/measure_recall.py 자취남
+
+# 값 하나를 바꿔서 A/B 비교
+../.venv/bin/python eval/measure_recall.py 자취남 --set clip_threshold=0.85
+```
+
+### ML 피처 분석 / 모델 성능 측정 — `extract_features.py` → `train_score.py`
+
+위 워크플로와 별개로, XML 코멘트를 파싱해 로지스틱회귀/랜덤포레스트로 점수 가중치
+자동 학습을 시도하는 실험용 도구입니다.
 
 ```bash
 cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro

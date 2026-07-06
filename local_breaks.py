@@ -21,7 +21,7 @@
 import re
 import math
 from topic_breaks import build_sentences
-from framecode import (FPS, FF_TOP, _ff_candidate, _ff_allowed, _base,
+from framecode import (FPS, FF_TOP, _base,
                        frame_to_seconds, frame_tier, frame_to_timecode,
                        _df_frame_ff)
 from patterns import starts_with_continuation

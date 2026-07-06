@@ -44,7 +44,6 @@ _DF_FRAMES_PER_MIN   = 1798    # 60*30 - 2
 
 def _df_frame_ff(frame):
     """절대 프레임 번호 → 29.97fps DF 타임코드의 FF(프레임 자리) 숫자만 반환."""
-    blocks = frame // _DF_FRAMES_PER_10MIN
     rem    = frame % _DF_FRAMES_PER_10MIN
     if rem < 1800:
         frames_in_min = rem

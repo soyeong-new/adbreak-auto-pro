@@ -144,9 +144,6 @@ def cv_evaluate(model_cls, model_kwargs: dict,
                 / sum(1 for f in valid if f["roc_auc"])) if valid else None
 
     # full PR curve over all folds
-    all_y_true = all_y_true
-    all_y_prob = all_y_prob
-    from sklearn.metrics import precision_recall_curve, average_precision_score
     prec_arr, rec_arr, thr_arr = precision_recall_curve(all_y_true, all_y_prob)
     overall_pr_auc = float(average_precision_score(all_y_true, all_y_prob))
 

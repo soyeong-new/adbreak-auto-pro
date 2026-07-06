@@ -155,23 +155,6 @@
   .cond-list li:first-child { border-top: none; }
   .ck { color: var(--green); font-weight: 700; flex-shrink: 0; }
 
-  /* SCORE SIMPLE */
-  .score-simple { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
-  .score-col {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
-  }
-  .score-col h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-  .score-item {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 7px 0; border-bottom: 1px solid var(--border);
-    font-size: 13px;
-  }
-  .score-item:last-child { border-bottom: none; }
-  .score-item .dot-g { color: var(--green); font-size: 16px; line-height: 1; flex-shrink: 0; }
-  .score-item .dot-r { color: var(--red);   font-size: 16px; line-height: 1; flex-shrink: 0; }
-  .score-item-text { color: var(--text-sub); }
-
   /* SCORE TABLE */
   .score-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .score-table th {
@@ -249,20 +232,13 @@
     color: #1a6b4a; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start;
   }
 
-  /* METHOD HEADER */
-  .method-header {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface2); border-radius: 10px;
-    padding: 12px 18px; margin-bottom: 16px; margin-top: 28px;
-  }
+  /* METHOD BADGE */
   .method-badge {
     font-size: 11px; font-weight: 700; padding: 3px 10px;
     border-radius: 20px; white-space: nowrap;
   }
   .mb-blue  { background: var(--accent-light); color: var(--accent); }
   .mb-green { background: var(--green-light);  color: var(--green); }
-  .method-header h3 { font-size: 14px; font-weight: 700; }
-  .method-header p  { font-size: 12px; color: var(--text-sub); }
 
   /* DETAIL TOGGLE */
   details { margin-top: 10px; }
@@ -286,7 +262,6 @@
     .page { padding: 36px 16px; }
     .flow { grid-template-columns: 1fr; gap: 6px; }
     .flow-arrow { transform: rotate(90deg); }
-    .score-simple { grid-template-columns: 1fr; }
   }
 
   /* ICONS (inline svg pictograms) */
@@ -538,6 +513,7 @@
             </thead>
             <tbody>
               <tr><td>장면 전환 (AI 확인)</td><td class="plus">+8.0</td><td>진짜 화면이 바뀐 컷</td></tr>
+              <tr><td>페이드 전환</td><td class="plus">+8.0(영화)</td><td>화면이 서서히 어두워지는 페이드 인/아웃 지점 (장르별 조정)</td></tr>
               <tr><td>주제 전환 (내용 비교 AI)</td><td class="plus">+4.0</td><td>전후 이야기 내용이 달라짐</td></tr>
               <tr><td>강한 화제 전환 표현</td><td class="plus">+3.0</td><td>"자 이제 / 다음으로 / 정리하자면…"으로 시작</td></tr>
               <tr><td>마무리 표현</td><td class="plus">+2.0</td><td>"겠습니다 / 이상입니다 / 마치겠습니다…"로 종료</td></tr>
