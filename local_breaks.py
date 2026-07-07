@@ -349,6 +349,13 @@ def select_ad_breaks_local(segments, duration, settings=None,
     for i in range(len(sentences) - 1):
         ended, nxt = sentences[i], sentences[i + 1]
 
+        # 데드존 조기 스킵: 침묵 탐색 범위 전체가 데드존 밖이면 값싼 비교만으로
+        # 걸러내고, 뒤쪽의 무거운 침묵 탐색(_find_silence)을 건너뛴다. 범위가
+        # 걸쳐 있는 경우는 여기서 걸러지지 않고 통과 -- 최종 정밀 판정은
+        # marker_time 확정 후 아래(관문 3)에서 그대로 수행한다.
+        if nxt["start"] + SILENCE_SEARCH < lo or ended["end"] - SILENCE_SEARCH > hi:
+            continue
+
         # A real silence must follow the completed sentence -- otherwise the
         # speech runs straight through and this is not a true sentence break.
         sil = _find_silence(voice_env, ended["end"] - SILENCE_SEARCH,
