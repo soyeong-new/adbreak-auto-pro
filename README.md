@@ -147,7 +147,6 @@ vscode/
     ├── DESIGN_markers.md    마커 점수 체계 설계 경위 문서
     ├── start_watcher.command   로컬 서버·watcher 실행용 더블클릭 스크립트
     ├── ad_marker_import.gs  구글 앱스 스크립트(스프레드시트 연동용)
-    ├── dev_guide.html       개발자용 가이드 페이지
     ├── project_guide.html   프로젝트 소개 페이지
     └── eval/
         ├── analyze_episodes.py   에피소드 일괄 분석 스크립트

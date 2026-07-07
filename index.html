@@ -305,14 +305,6 @@
           </div>
         </div>
         <div class="w-item">
-          <label>침묵 최소 길이</label>
-          <div class="w-desc">낮을수록 짧은 침묵도 후보로 인식합니다.</div>
-          <div class="sl-row">
-            <input id="sil_min" type="range" min="0.1" max="1.0" step="0.1" value="0.3" oninput="sv('smvv',parseFloat(this.value).toFixed(1)+'초')">
-            <span id="smvv" class="sl-val">0.3초</span>
-          </div>
-        </div>
-        <div class="w-item">
           <label>페이드 인/아웃 점수</label>
           <div class="w-desc">화면이 서서히 어두워지는 구간을 얼마나 우선할지 정합니다.</div>
           <div class="sl-row">
@@ -422,7 +414,7 @@ fetch('/genres.json').then(r=>r.json()).then(list=>{
     PRESETS[g.id] = {
       ws: g.w_scene,
       wt: g.w_topic_change,
-      sm: g.silence_min,                    // 초 단위 그대로 (사람 단위 통일)
+      sm: g.silence_min,                    // 침묵 최소 길이 — 관문값이라 슬라이더 없음 (전송용)
       wf: g.w_fade,
       frs: g.fade_require_silence,           // 페이드 침묵 관문 여부 (전송용)
       fsb: g.fade_silence_bonus,             // 페이드 침묵 보너스 (전송용)
@@ -443,7 +435,6 @@ function selectGenre(g){
   const p = PRESETS[g];
   $('w_scene').value=p.ws;       $('wsvv').textContent=p.ws;
   $('w_topic').value=p.wt;       $('wtvv').textContent=p.wt;
-  $('sil_min').value=p.sm;       $('smvv').textContent=parseFloat(p.sm).toFixed(1)+'초';
   $('w_fade').value=p.wf;        $('wfvv').textContent=p.wf;
   $('w_quiet_cut').value=p.wqc;  $('wqcvv').textContent=p.wqc;
   $('fmin').value=p.fmin;
@@ -488,7 +479,7 @@ async function analyze(){
           outro_deadzone: parseFloat($('odz').value),
           w_scene:        parseFloat($('w_scene').value),
           w_topic_change: parseFloat($('w_topic').value),
-          silence_min:    parseFloat($('sil_min').value),
+          silence_min:    (PRESETS[_activeGenre]||{}).sm ?? 0.5,
           w_fade:         parseFloat($('w_fade').value),
           fade_require_silence: (PRESETS[_activeGenre]||{}).frs ?? true,
           fade_silence_bonus:   (PRESETS[_activeGenre]||{}).fsb ?? 0,

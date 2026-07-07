@@ -61,7 +61,6 @@ W_STRONG_OPENER = 3.0
 W_WEAK_OPENER = 1.0
 W_CLOSER = 2.0
 W_SCENE = 8.0
-P_CLIP_FAIL = 8.0  # CLIP 재검증 실패 시 패널티 (장면전환 아님으로 판정)
 SCENE_RADIUS = 0.3
 # 2026-05-24: CLIP-확인된 컷에 대해 SCENE_RADIUS를 넓혀 silence 기반 후보를 has_cut=True로
 # 업그레이드. 새 후보를 생성하는 게 아니라 기존 후보의 has_cut 상태만 교정.

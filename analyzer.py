@@ -45,7 +45,7 @@ def _compute_clip_and_text_signals(video_path, valid_cuts, segments, clip_th, pr
     return clip_real_cuts, clip_checked_cuts, clip_sims, text_sims
 
 
-def _verify(video_path, markers, progress=None):
+def _verify(video_path, markers, progress=None, w_scene=W_SCENE):
     """CLIP-verify the transition candidates. A transition that fails CLIP is
     demoted to a reference marker -- never dropped, because the sentence end +
     verified silence still hold; only the "scene cut" claim is withdrawn.
@@ -53,6 +53,11 @@ def _verify(video_path, markers, progress=None):
 
     Cut-anchor markers (cut_anchor=True) already passed batch CLIP before
     candidate generation; they are annotated but not re-verified here.
+
+    w_scene : the genre's effective w_scene (same value _score() added as the
+              has_cut bonus) -- must match so the CLIP-fail penalty exactly
+              cancels that bonus instead of over/under-correcting for genres
+              whose w_scene differs from the module default.
     """
     # fade_anchor 마커는 CLIP 재검증 제외 — 암전 프레임에서 CLIP 유사도는 항상 낮게 나와 무의미함
     need_clip = [m for m in markers
@@ -82,7 +87,7 @@ def _verify(video_path, markers, progress=None):
                 m["reason"] += f" · CLIP 검수 통과(유사도 {sim:.2f})"
         else:
             m["has_cut"] = False
-            m["score"] = round(m["score"] - W_SCENE, 2)  # W_SCENE(5.0) 환수 → 총 패널티 -5.0
+            m["score"] = round(m["score"] - w_scene, 2)  # 채점 때 더했던 것과 같은 값 환수
             sim_txt = f" 유사도 {sim:.2f}" if sim is not None else ""
             m["reason"] = f"[장면 전환 아님 — CLIP{sim_txt}] " + m["reason"]
         kept.append(m)
@@ -168,7 +173,8 @@ def run_analysis(video_path, settings=None, progress=None):
             if abs(nearest_cut - m["time"]) < 1.5:
                 m["clip_similarity"] = clip_sims[nearest_cut]
 
-    markers = _verify(video_path, markers, progress)
+    _w_scene = float((settings or {}).get("w_scene", W_SCENE))
+    markers = _verify(video_path, markers, progress, w_scene=_w_scene)
 
     # 1st pass: ad slots (each = recommendation + alternatives in its window).
     # 2nd pass: CLIP-confirmed cut-anchor markers only, no gap_min/spacing limit.
