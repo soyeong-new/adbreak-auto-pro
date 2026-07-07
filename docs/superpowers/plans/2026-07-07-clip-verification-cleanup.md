@@ -169,9 +169,11 @@ def select_ad_breaks_local(segments, duration, settings=None,
 Run: `../.venv/bin/python /private/tmp/.../scratchpad/test_classify.py`
 Expected: `ALL PASS`
 
-- [ ] **Step 5: 재현율 회귀 확인**
+- [ ] **Step 5: 재현율 확인 (Task 1 단독 상태 — 완전한 베이스라인 일치는 Task 2 이후에 확인)**
 
-Run: `../.venv/bin/python eval/measure_recall.py 자취남` — `real_cuts`만 넘기고 `clip_checked_cuts`는 아직 `None`이라 모든 근접 컷이 "데이터 없음"(3번 분기, 기존과 동일한 동작)으로 처리됨. 자취남/드라마 숫자가 베이스라인과 **정확히 동일**해야 한다(자취남 18/39·2/39·445, 드라마 27/32·6/32·1100). 아직 `eval/measure_recall.py`를 안 고쳤으니 이 단계에선 당연히 동일해야 정상.
+Run: `/Users/choisoyeong/Desktop/vscode/.venv/bin/python eval/measure_recall.py 자취남` — `clip_checked_cuts`가 `eval/measure_recall.py`에서 아직 안 넘어가(Task 2에서 배선 예정) 항상 빈 집합이라, `real_cuts`에 없는 근접 컷은 전부 "데이터 없음"(3번 분기)으로 처리되어 `SCENE_RADIUS_CLIP`(1.0초)까지 `has_cut=True`가 적용된다. 자취남은 베이스라인과 **정확히 동일**해야 한다(18/39·2/39·445) — 실제로 동일함을 확인함.
+
+**주의**: 같은 이유로 드라마 재현율은 이 단계에서 1차 선발 재현이 6/32가 아니라 **7/32로 나오는 게 정상**이다(전체 마커 재현 27/32·마커수 1100은 동일 — `has_cut`은 순위매기기에만 영향을 주고 마커 존재 자체엔 영향 없기 때문). `clip_checked_cuts`가 실제 데이터로 채워지는 Task 2가 끝나야 3번 분기가 "데드존 경계 등 진짜 데이터 없는 극소수 컷"으로만 좁혀져 드라마도 베이스라인(6/32)과 정확히 일치한다 — 검증 완료(Task 2용 배선을 임시 적용 후 재측정해 6/32로 돌아옴을 확인함). Task 1 단독 완료 조건은 자취남 일치 + 드라마 전체재현/마커수 일치이며, 드라마 1차재현 최종 일치는 Task 2의 완료 조건이다.
 
 - [ ] **Step 6: 커밋**
 
