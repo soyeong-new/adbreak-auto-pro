@@ -4,7 +4,8 @@
 
   Path 1 — 침묵 기반
     문장 종결 직후 적응형 침묵(≥0.5s)이 확인되고, 침묵 안에 허용 프레임이 있는 경우.
-    CLIP 확인 컷이 ±0.3s(또는 ±1.0s) 이내면 has_cut=True로 업그레이드.
+    ±1.0s 이내 가장 가까운 컷을 CLIP 배치검증 결과로 분류해 has_cut을 판정
+    (진짜 확인됨/가짜로 확인됨/아직 확인 안 됨 3가지, _classify_scene_transition 참조).
 
   Path 2 — 컷 앵커
     CLIP 유사도 < 0.80인 실제 화면 전환이 허용 프레임에 정확히 착지하고,
@@ -372,10 +373,11 @@ def select_ad_breaks_local(segments, duration, settings=None,
             continue
 
         # A scene cut coinciding with the silence -> transition candidate.
-        # Primary check: any cut within SCENE_RADIUS.
-        # Extended check: CLIP-confirmed cut within SCENE_RADIUS_CLIP (wider).
-        # The extended check only upgrades existing silence-based markers —
-        # it never generates new candidates.
+        # Find the nearest original cut within SCENE_RADIUS_CLIP and classify it
+        # against the CLIP batch-verification results: confirmed real (has_cut=True,
+        # clip_preconfirmed=True, skip later individual re-verification), confirmed
+        # fake (has_cut=False), or not yet checked (has_cut=True, deferred to
+        # individual re-verification later). See _classify_scene_transition().
         has_cut, cut_dist, clip_preconfirmed = _classify_scene_transition(
             marker_time, cuts, real_cuts, checked_cuts)
 

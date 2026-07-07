@@ -132,8 +132,10 @@ def run_analysis(video_path, settings=None, progress=None):
         fades     = f_fades.result()
 
     # Batch CLIP: confirm which scene cuts are genuine transitions (cached).
-    # Used to upgrade silence-based markers within SCENE_RADIUS_CLIP of a
-    # confirmed cut to has_cut=True without generating new candidates.
+    # clip_real_cuts = confirmed genuine; clip_checked_cuts = every cut that got
+    # a similarity value (real or fake, superset of clip_real_cuts). Both are
+    # used by local_breaks._classify_scene_transition() to classify silence-based
+    # markers within SCENE_RADIUS_CLIP without generating new candidates.
     _s = {**{"intro_deadzone": 180.0, "outro_deadzone": 180.0},
           **(settings or {})}
     valid_cuts = [c for c in scenes
