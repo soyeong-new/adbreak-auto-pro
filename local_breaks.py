@@ -193,6 +193,29 @@ def _nearest_allowed_frame(t, fps=FPS, drop_frame=False):
     return None
 
 
+def _classify_scene_transition(marker_time, cuts, real_cuts, checked_cuts):
+    """마커 시각에서 가장 가까운 원본 컷을 찾아 화면전환 여부를 판정한다.
+
+    real_cuts   : CLIP 배치검증에서 진짜 장면전환으로 확인된 컷 집합.
+    checked_cuts: CLIP 배치검증을 시도해서 값이 나온 컷 전체 집합(real_cuts의 상위집합).
+                  real_cuts에 없지만 checked_cuts엔 있으면 "확인했는데 가짜"라는 뜻이고,
+                  checked_cuts에도 없으면 "배치검증 자체가 안 됨"(데드존 경계 등)이라는 뜻이다.
+
+    Returns (has_cut, cut_dist, clip_preconfirmed).
+    """
+    if not cuts:
+        return False, 0.0, False
+    cut = min(cuts, key=lambda c: abs(c - marker_time))
+    dist = abs(cut - marker_time)
+    if dist > SCENE_RADIUS_CLIP:
+        return False, 0.0, False
+    if cut in real_cuts:
+        return True, dist, True
+    if cut in checked_cuts:
+        return False, 0.0, False
+    return True, dist, False
+
+
 def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
            w_scene=W_SCENE, fade_mode=False, fps=FPS, drop_frame=False):
     """Score a marker. Returns (score, reasons, has_signal, kill_reason).
@@ -273,7 +296,8 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
 def select_ad_breaks_local(segments, duration, settings=None,
                            scene_cuts=None, voice_env=None,
                            loudness_env=None,
-                           clip_real_cuts=None, text_sims=None,
+                           clip_real_cuts=None, clip_checked_cuts=None,
+                           text_sims=None,
                            fade_cuts=None, fps=FPS, drop_frame=False):
     """Return a flat, time-sorted list of every candidate marker.
 
@@ -294,6 +318,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
         return []
     cuts = sorted(scene_cuts) if scene_cuts else []
     real_cuts = set(clip_real_cuts) if clip_real_cuts else set()
+    checked_cuts = set(clip_checked_cuts) if clip_checked_cuts else set()
 
     lo = s["intro_deadzone"]
     hi = duration - s["outro_deadzone"]
@@ -344,16 +369,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
         # Extended check: CLIP-confirmed cut within SCENE_RADIUS_CLIP (wider).
         # The extended check only upgrades existing silence-based markers —
         # it never generates new candidates.
-        has_cut, cut_dist = False, 0.0
-        clip_preconfirmed = False
-        if cuts:
-            cut = min(cuts, key=lambda c: abs(c - marker_time))
-            dist = abs(cut - marker_time)
-            if dist <= SCENE_RADIUS:
-                has_cut, cut_dist = True, dist
-            elif real_cuts and dist <= SCENE_RADIUS_CLIP and cut in real_cuts:
-                has_cut, cut_dist = True, dist
-                clip_preconfirmed = True
+        has_cut, cut_dist, clip_preconfirmed = _classify_scene_transition(
+            marker_time, cuts, real_cuts, checked_cuts)
 
         tier = frame_tier(frame, fps, drop_frame)
         sc, reasons, signal, kill_reason = _score(
@@ -513,6 +530,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 "next_sentence": nxt_text,
                 "kill_reason": kill_reason,
                 "cut_anchor": True,
+                "clip_preconfirmed": True,
             }
             if text_sim is not None:
                 m["text_sim"] = text_sim
