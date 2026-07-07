@@ -530,6 +530,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 "next_sentence": nxt_text,
                 "kill_reason": kill_reason,
                 "cut_anchor": True,
+                "clip_preconfirmed": True,
             }
             if text_sim is not None:
                 m["text_sim"] = text_sim
