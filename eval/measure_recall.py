@@ -147,9 +147,11 @@ def run_one(stem, settings):
     segs, dur, scenes, voice, loudness, clip, tsim, fades = load_inputs(stem)
     clip_th = float(settings.get("clip_threshold", SAME_THRESHOLD))
     clip_real = {c for c, s in clip.items() if s is not None and s < clip_th}
+    clip_checked = {c for c, s in clip.items() if s is not None}
     markers = select_ad_breaks_local(segs, dur, settings, scene_cuts=scenes,
                                      voice_env=voice, loudness_env=loudness,
                                      clip_real_cuts=clip_real,
+                                     clip_checked_cuts=clip_checked,
                                      text_sims=tsim, fade_cuts=fades)
     slots = pick_primary(markers, dur, settings)
     primary = [m for slot in slots for m in slot]

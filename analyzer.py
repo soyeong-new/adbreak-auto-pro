@@ -24,6 +24,27 @@ from xml_output import build_candidate_xml
 from framecode import seconds_to_timecode, FPS as DEFAULT_FPS
 
 
+def _compute_clip_and_text_signals(video_path, valid_cuts, segments, clip_th, progress=None):
+    """[6]CLIP 배치검증과 [7]텍스트 유사도를 병렬로 계산한다.
+
+    둘 다 valid_cuts만 입력받는 독립적인 계산이라 동시 실행 가능하다.
+    Returns (clip_real_cuts, clip_checked_cuts, clip_sims, text_sims).
+    """
+    if not valid_cuts:
+        return set(), set(), {}, {}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_clip = pool.submit(batch_scene_similarities, video_path, valid_cuts,
+                             progress=progress)
+        f_text = pool.submit(batch_text_similarities, video_path, segments,
+                             valid_cuts, progress=progress)
+        clip_sims = f_clip.result()
+        text_sims = f_text.result()
+    clip_real_cuts = {c for c, sim in clip_sims.items()
+                      if sim is not None and sim < clip_th}
+    clip_checked_cuts = {c for c, sim in clip_sims.items() if sim is not None}
+    return clip_real_cuts, clip_checked_cuts, clip_sims, text_sims
+
+
 def _verify(video_path, markers, progress=None):
     """CLIP-verify the transition candidates. A transition that fails CLIP is
     demoted to a reference marker -- never dropped, because the sentence end +
@@ -111,8 +132,10 @@ def run_analysis(video_path, settings=None, progress=None):
         fades     = f_fades.result()
 
     # Batch CLIP: confirm which scene cuts are genuine transitions (cached).
-    # Used to upgrade silence-based markers within SCENE_RADIUS_CLIP of a
-    # confirmed cut to has_cut=True without generating new candidates.
+    # clip_real_cuts = confirmed genuine; clip_checked_cuts = every cut that got
+    # a similarity value (real or fake, superset of clip_real_cuts). Both are
+    # used by local_breaks._classify_scene_transition() to classify silence-based
+    # markers within SCENE_RADIUS_CLIP without generating new candidates.
     _s = {**{"intro_deadzone": 180.0, "outro_deadzone": 180.0},
           **(settings or {})}
     valid_cuts = [c for c in scenes
@@ -121,20 +144,11 @@ def run_analysis(video_path, settings=None, progress=None):
     # 기본 0.80(SAME_THRESHOLD). 자취남처럼 같은 공간 내 약한 컷이 광고점인 장르는
     # 0.85로 완화해 후보를 넓힌다 (genres.json clip_threshold).
     clip_th = float(_s.get("clip_threshold", SAME_THRESHOLD))
-    clip_sims = {}
-    clip_real_cuts = set()
-    if valid_cuts:
-        clip_sims = batch_scene_similarities(video_path, valid_cuts,
-                                             progress=progress)
-        clip_real_cuts = {c for c, sim in clip_sims.items()
-                          if sim is not None and sim < clip_th}
-
     # 텍스트 의미 유사도: CLIP 확인된 컷 전후 주제가 바뀌는지 측정.
     # 낮은 유사도 = 주제 전환 = 광고 후보로 우선 고려.
-    text_sims = {}
-    if valid_cuts:
-        text_sims = batch_text_similarities(video_path, segments, valid_cuts,
-                                            progress=progress)
+    # 두 계산 모두 valid_cuts만 입력받는 독립적인 작업이라 병렬 실행한다.
+    clip_real_cuts, clip_checked_cuts, clip_sims, text_sims = _compute_clip_and_text_signals(
+        video_path, valid_cuts, segments, clip_th, progress=progress)
 
     if progress:
         progress("광고 지점 후보 탐색 중...")
@@ -142,6 +156,7 @@ def run_analysis(video_path, settings=None, progress=None):
                                      scene_cuts=scenes, voice_env=voice,
                                      loudness_env=loudness,
                                      clip_real_cuts=clip_real_cuts,
+                                     clip_checked_cuts=clip_checked_cuts,
                                      text_sims=text_sims,
                                      fade_cuts=fades,
                                      fps=fps, drop_frame=drop_frame)
