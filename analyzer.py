@@ -123,11 +123,14 @@ def run_analysis(video_path, settings=None, progress=None):
     clip_th = float(_s.get("clip_threshold", SAME_THRESHOLD))
     clip_sims = {}
     clip_real_cuts = set()
+    clip_checked_cuts = set()
     if valid_cuts:
         clip_sims = batch_scene_similarities(video_path, valid_cuts,
                                              progress=progress)
         clip_real_cuts = {c for c, sim in clip_sims.items()
                           if sim is not None and sim < clip_th}
+        clip_checked_cuts = {c for c, sim in clip_sims.items()
+                             if sim is not None}
 
     # 텍스트 의미 유사도: CLIP 확인된 컷 전후 주제가 바뀌는지 측정.
     # 낮은 유사도 = 주제 전환 = 광고 후보로 우선 고려.
@@ -142,6 +145,7 @@ def run_analysis(video_path, settings=None, progress=None):
                                      scene_cuts=scenes, voice_env=voice,
                                      loudness_env=loudness,
                                      clip_real_cuts=clip_real_cuts,
+                                     clip_checked_cuts=clip_checked_cuts,
                                      text_sims=text_sims,
                                      fade_cuts=fades,
                                      fps=fps, drop_frame=drop_frame)
