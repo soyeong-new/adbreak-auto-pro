@@ -29,25 +29,25 @@
        (1~5 결과는 .cache/에 캐싱, 병렬 실행)
   │
   ▼
-  [5] CLIP 배치 장면 검증  (ViT-B-32-quickgelu)
-      PySceneDetect가 찾은 컷마다 전후 프레임을 비교
-      코사인 유사도 < 0.80 → "진짜 장면 전환" 확정
-      유사도 ≥ 0.80 → 동일 장면 내 앵글 변화·그래픽 등, 제외
+  [6] CLIP 배치 장면 검증 + [7] 한국어 텍스트 유사도  (병렬 실행)
+      [6] ViT-B-32-quickgelu — PySceneDetect가 찾은 컷마다 전후 프레임을 비교
+          코사인 유사도 < 0.80 → "진짜 장면 전환" 확정(real_cuts)
+          유사도 ≥ 0.80 → 동일 장면 내 앵글 변화·그래픽 등, 제외
+          (값이 나온 컷 전체 = checked_cuts, real_cuts의 상위집합)
+      [7] jhgan/ko-sroberta-multitask — 데드존 밖 전체 컷 지점의 전후 발화를 임베딩
+          유사도 < 0.75 → 주제가 바뀌는 컷 (+4.0점, Path 2에만 적용)
   │
   ▼
-  [6] 한국어 텍스트 유사도  (jhgan/ko-sroberta-multitask)
-      데드존 밖 전체 컷 지점의 전후 발화를 임베딩해 유사도 계산
-      유사도 < 0.75 → 주제가 바뀌는 컷 (+4.0점)
-  │
-  ▼
-  [6] 마커 후보 생성  (세 가지 경로)
+  [8] 마커 후보 생성  (세 가지 경로)
 
       Path 1 — 침묵 기반
         문장 끝 직후에 적응형 침묵(≥0.5s)이 있고
-        침묵 안에 허용 프레임(:00/:01~:03/:28~:29)이 들어오는 경우
-        → 마커 생성. 근처에 CLIP 확인 컷이 있으면 "검증전환"으로 업그레이드:
-          · PySceneDetect 컷 ±0.3s 이내
-          · CLIP 확인 컷 ±1.0s 이내 (더 넓은 반경)
+        침묵 안에 허용 프레임(:00/:01~:03/:28~:29)이 들어오는 경우 → 마커 생성.
+        ±1.0s 이내 가장 가까운 컷을 CLIP 배치검증 결과로 분류해 화면전환 여부 판정:
+          · real_cuts에 있음(배치검증: 진짜) → "검증전환", 개별 재검증 생략
+          · checked_cuts엔 있는데 real_cuts엔 없음(배치검증: 가짜) → 전환 아님, 재검증 생략
+          · checked_cuts에도 없음(배치검증 데이터 없음, 데드존 경계 등) → 일단 전환으로
+            보고 [8]에서 개별 CLIP 재검증
 
       Path 2 — 컷 앵커
         CLIP 확인 컷(유사도 < 0.80)이 발화 갭(Whisper 문장 간격 또는
@@ -64,13 +64,14 @@
         Path 1/2 마커가 이미 ±0.3s 이내에 있으면 중복 생성 방지.
   │
   ▼
-  [7] CLIP 개별 재검증
-      대상: Path 1 중 일반 컷(±0.3s) 기반 마커
-      (배치 CLIP으로 이미 확인된 ±1.0s 업그레이드 마커 및 Path 3 페이드 앵커는 생략)
+  [9] CLIP 개별 재검증
+      대상: Path 1 마커 중 배치검증 데이터가 없던 것만(극소수, 데드존 경계 등)
+      (배치검증에서 이미 진짜/가짜로 확인된 마커, Path 2 컷 앵커, Path 3 페이드 앵커는
+       전부 생략 — 중복 CLIP 호출 방지)
       단건으로 재확인 후 유사도 ≥ 0.80이면 "참고"로 강등 (마커 자체는 유지)
   │
   ▼
-  [8] 점수화 + 1차/2차 분리
+  [10] 점수화 + 1차/2차 분리
 
       1차 (_adbreaks.xml):
         Path 1/2/3 마커 전체 통합 후
@@ -127,7 +128,11 @@ vscode/
 ├── .venv/                   공용 가상환경 (여러 프로젝트 공유)
 └── adbreak_auto_pro/        이 프로젝트 폴더
     ├── app.py               로컬 HTTP 서버 (포트 8000, /api/analyze 엔드포인트)
+    ├── cli.py               터미널에서 영상 직접 분석하는 CLI 도구
     ├── index.html           브라우저 UI
+    ├── genres.json          장르 프리셋 단일 소스 (UI·공유폴더 공통)
+    ├── watcher.py           SMB 공유 폴더 감시 → 자동 분석
+    ├── setup_dropbox.sh     genres.json → 공유 폴더별 settings.json 생성 스크립트
     ├── analyzer.py          전체 파이프라인 조율 (run_analysis)
     ├── pipeline.py          Whisper 전사, PySceneDetect, 음성 엔벌로프 추출 + 캐싱
     ├── local_breaks.py      마커 후보 생성 핵심 로직 + 점수 계산 + 1차 배치
@@ -138,6 +143,12 @@ vscode/
     ├── framecode.py         타임코드/프레임 변환, 허용 프레임 정의 (30fps)
     ├── xml_output.py        Premiere용 FCP7 XML 생성
     ├── ground_truth.txt     평가용 정답 데이터 (에피소드별 광고 타임코드)
+    ├── CLAUDE.md            AI 에이전트용 프로젝트 규칙 문서
+    ├── DESIGN_markers.md    마커 점수 체계 설계 경위 문서
+    ├── start_watcher.command   로컬 서버·watcher 실행용 더블클릭 스크립트
+    ├── ad_marker_import.gs  구글 앱스 스크립트(스프레드시트 연동용)
+    ├── dev_guide.html       개발자용 가이드 페이지
+    ├── project_guide.html   프로젝트 소개 페이지
     └── eval/
         ├── analyze_episodes.py   에피소드 일괄 분석 스크립트
         ├── load_ground_truth.py  ground_truth.txt → JSON 변환
@@ -145,6 +156,8 @@ vscode/
         ├── extract_features.py   XML 마커에서 피처 행렬 추출 (features.json/csv)
         ├── train_score.py        5-fold CV 평가 (Logistic Regression + Random Forest)
         ├── ground_truth.json     변환된 정답 데이터
+        ├── drama_ground_truth.txt   드라마 장르 정답 데이터 (measure_recall.py용)
+        ├── jcn_ground_truth.txt     자취남 장르 정답 데이터 (measure_recall.py용)
         └── output/               분석 결과 (features.json, train_report.json)
 ```
 
@@ -288,20 +301,20 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 UI 또는 API 요청의 `settings` 오브젝트로 전달합니다. **시간 값은 분(minute) 단위**로 입력합니다. app.py가 내부적으로 ×60하여 초로 변환합니다.
 
-모든 시간/간격 파라미터는 `genres.json`에서 장르별로 관리됩니다. UI에서 장르를 선택하면 자동으로 채워지며, 슬라이더로 수동 조정도 가능합니다.
+모든 시간/간격 파라미터는 `genres.json`에서 장르별로 관리됩니다. UI에서 장르를 선택하면 자동으로 채워집니다. 이 중 점수 가중치 4개(`w_scene`/`w_topic_change`/`w_fade`/`w_quiet_cut`)와 간격 6개는 UI 슬라이더/입력창으로 직접 조정 가능하고, 나머지(`silence_min`/`clip_threshold`/`fade_require_silence`/`fade_silence_bonus`)는 마커 생성 조건에 관여하는 값이라 UI에 노출하지 않고 장르 선택으로만 결정됩니다. API로 직접 호출할 땐 모든 필드를 자유롭게 넘길 수 있습니다.
 
-| 파라미터 | 단위 | 설명 |
-|---|---|---|
-| `intro_deadzone` | 분 | 영상 시작 후 마커 금지 구간 |
-| `outro_deadzone` | 분 | 영상 끝 전 마커 금지 구간 |
-| `first_min` / `first_max` | 분 | 첫 광고 삽입 시간 창 |
-| `gap_min` / `gap_max` | 분 | 광고 간 간격 범위 |
-| `w_scene` | 점수 | 장면 전환 가중치 |
-| `w_topic_change` | 점수 | 주제 전환 가중치 |
-| `w_fade` | 점수 | 페이드 전환 가중치 |
-| `w_quiet_cut` | 점수 | BGM 없는 조용한 구간 보너스 |
-| `silence_min` | 초 | Path 1 침묵 최소 길이 |
-| `clip_threshold` | 0~1 | CLIP 장면 전환 판정 문턱 (미만이면 진짜 전환) |
+| 파라미터 | 단위 | 설명 | UI 조정 |
+|---|---|---|---|
+| `intro_deadzone` | 분 | 영상 시작 후 마커 금지 구간 | O |
+| `outro_deadzone` | 분 | 영상 끝 전 마커 금지 구간 | O |
+| `first_min` / `first_max` | 분 | 첫 광고 삽입 시간 창 | O |
+| `gap_min` / `gap_max` | 분 | 광고 간 간격 범위 | O |
+| `w_scene` | 점수 | 장면 전환 가중치 | O |
+| `w_topic_change` | 점수 | 주제 전환 가중치 | O |
+| `w_fade` | 점수 | 페이드 전환 가중치 | O |
+| `w_quiet_cut` | 점수 | BGM 없는 조용한 구간 보너스 | O |
+| `silence_min` | 초 | Path 1 침묵 최소 길이(생성 조건) | 장르 선택으로만 |
+| `clip_threshold` | 0~1 | CLIP 장면 전환 판정 문턱(미만이면 진짜 전환) | 장르 선택으로만 |
 
 기본값 및 장르별 설정은 `genres.json` 참조. `setup_dropbox.sh`를 실행하면 공유 폴더 `settings.json`에 자동 반영됩니다.
 
