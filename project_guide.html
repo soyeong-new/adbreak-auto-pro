@@ -101,7 +101,7 @@
   /* PIPELINE FLOW */
   .flow {
     display: grid;
-    grid-template-columns: 1fr 36px 1fr 36px 1fr 36px 1fr;
+    grid-template-columns: 1fr 26px 1fr 26px 1fr 26px 1fr 26px 1fr;
     align-items: center;
     gap: 0;
     margin-bottom: 32px;
@@ -239,6 +239,7 @@
   }
   .mb-blue  { background: var(--accent-light); color: var(--accent); }
   .mb-green { background: var(--green-light);  color: var(--green); }
+  .mb-orange { background: var(--orange-light); color: #b57a10; }
 
   /* DETAIL TOGGLE */
   details { margin-top: 10px; }
@@ -359,63 +360,76 @@
   <!-- ── 작동 방식 ── -->
   <section class="section" id="how">
     <div class="section-title"><svg class="ic"><use href="#i-cycle"/></svg> 어떻게 작동하나요?</div>
-    <p class="section-sub">영상 파일을 넣으면 크게 4단계를 거쳐 마커 파일이 만들어집니다.</p>
+    <p class="section-sub">영상 파일을 넣으면 크게 5단계를 순서대로 거쳐 마커 파일이 만들어집니다. 아래 다섯 박스가 그 순서 그대로입니다.</p>
 
     <!-- 큰 흐름 -->
     <div class="flow">
       <div class="flow-box">
         <div class="flow-ico"><svg class="ic"><use href="#i-film"/></svg></div>
-        <div class="flow-label">영상 분석</div>
-        <div class="flow-desc">음성·장면·밝기를<br>동시에 읽어냄</div>
+        <div class="flow-label">① 신호 추출</div>
+        <div class="flow-desc">음성·장면·음량·밝기<br>다섯 가지 동시 추출</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-box">
         <div class="flow-ico"><svg class="ic"><use href="#i-cpu"/></svg></div>
-        <div class="flow-label">AI 검증</div>
-        <div class="flow-desc">진짜 장면 전환인지<br>AI가 눈으로 확인</div>
+        <div class="flow-label">② 배치 검증</div>
+        <div class="flow-desc">컷 전체를 한 번에<br>미리 확인</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-box">
         <div class="flow-ico"><svg class="ic"><use href="#i-pin"/></svg></div>
-        <div class="flow-label">후보 생성</div>
+        <div class="flow-label">③ 후보 생성</div>
         <div class="flow-desc">세 가지 방식으로<br>마커 후보 선별</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-box">
+        <div class="flow-ico"><svg class="ic"><use href="#i-search"/></svg></div>
+        <div class="flow-label">④ 개별 재검증</div>
+        <div class="flow-desc">애매한 소수만<br>한 번 더 확인</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
         <div class="flow-ico"><svg class="ic"><use href="#i-file"/></svg></div>
-        <div class="flow-label">파일 출력</div>
-        <div class="flow-desc">1차·2차 XML로<br>Premiere에 바로 사용</div>
+        <div class="flow-label">⑤ 점수화·출력</div>
+        <div class="flow-desc">순위 매겨 1차·2차<br>XML로 저장</div>
       </div>
     </div>
 
     <!-- 1단계 상세 -->
-    <p style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text)">① 영상 분석 — 네 가지를 동시에 읽어냅니다</p>
+    <p style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--text)">① 신호 추출 — 다섯 가지를 동시에 읽어냅니다</p>
     <div class="flow-detail">
       <div class="fdet">
         <div class="fdet-ico"><svg class="ic"><use href="#i-speech"/></svg></div>
         <div class="fdet-text">
-          <h5>음성을 텍스트로</h5>
+          <h5>음성을 텍스트로 <span class="method-badge mb-blue" style="margin-left:4px">Whisper</span></h5>
           <p>무슨 말을 하는지, 언제 문장이 끝나는지 파악</p>
         </div>
       </div>
       <div class="fdet">
         <div class="fdet-ico"><svg class="ic"><use href="#i-scissors"/></svg></div>
         <div class="fdet-text">
-          <h5>장면 전환 위치</h5>
+          <h5>장면 전환 위치 <span class="method-badge mb-green" style="margin-left:4px">PySceneDetect</span></h5>
           <p>화면이 확 바뀌는 지점을 빠르게 탐색</p>
         </div>
       </div>
       <div class="fdet">
         <div class="fdet-ico"><svg class="ic"><use href="#i-volume"/></svg></div>
         <div class="fdet-text">
-          <h5>음성 음량 흐름</h5>
+          <h5>음성 음량 흐름 <span class="method-badge mb-orange" style="margin-left:4px">ffmpeg</span></h5>
           <p>어느 구간에 소리가 없는지 감지</p>
+        </div>
+      </div>
+      <div class="fdet">
+        <div class="fdet-ico"><svg class="ic"><use href="#i-music"/></svg></div>
+        <div class="fdet-text">
+          <h5>전체 음량 흐름 <span class="method-badge mb-orange" style="margin-left:4px">ffmpeg</span></h5>
+          <p>배경음악(BGM)이 있는 구간인지 판별 — 일부 장르에서 BGM 없는 조용한 컷에 가산점</p>
         </div>
       </div>
       <div class="fdet">
         <div class="fdet-ico"><svg class="ic"><use href="#i-moon"/></svg></div>
         <div class="fdet-text">
-          <h5>화면 밝기 흐름</h5>
+          <h5>화면 밝기 흐름 <span class="method-badge mb-orange" style="margin-left:4px">ffmpeg</span></h5>
           <p>페이드 인/아웃으로 어두워지는 구간 감지</p>
         </div>
       </div>
@@ -423,25 +437,36 @@
 
     <div class="info">
       <span><svg class="ic"><use href="#i-zap"/></svg></span>
-      <span>네 가지 분석이 동시에 실행됩니다. 한 번 분석한 영상은 결과가 저장되어 다음에는 훨씬 빠르게 처리됩니다.</span>
+      <span>다섯 가지 분석이 동시에 실행됩니다. 한 번 분석한 영상은 결과가 저장되어 다음에는 훨씬 빠르게 처리됩니다.</span>
     </div>
+    <div class="tip">
+      <span><svg class="ic"><use href="#i-volume"/></svg></span>
+      <span><b>음성 음량 흐름</b>과 <b>전체 음량 흐름</b>은 다른 데이터입니다. 음성 음량은 사람 목소리 대역(250~3000Hz)만 걸러서 "말이 멈췄는지"를 보고, 전체 음량은 대역 구분 없이 전체 소리를 봐서 "배경음악이 깔려 있는지"를 봅니다. 둘 다 조용하면 BGM 없이 완전히 정지된 구간이라는 뜻이라 광고 넣기 더 좋은 지점으로 봅니다.</span>
+    </div>
+    <details style="margin-top:14px">
+      <summary>자세한 기술 정보 보기</summary>
+      <div class="detail-body">
+        <div class="grid2" style="grid-template-columns: repeat(2, 1fr)">
+          <div class="card">
+            <h3><svg class="ic"><use href="#i-speech"/></svg> 음성 인식 (Whisper)</h3>
+            <p>OpenAI가 만든 음성 인식 AI입니다. 영상의 한국어 음성을 텍스트로 변환하고 각 문장의 시작·끝 시각을 밀리초 단위로 파악합니다. Apple Silicon GPU를 활용해 CPU보다 약 7배 빠르게 처리합니다.</p>
+          </div>
+          <div class="card">
+            <h3><svg class="ic"><use href="#i-video"/></svg> 영상 처리 (ffmpeg / PySceneDetect)</h3>
+            <p>영상 분석 전용 도구입니다. PySceneDetect가 픽셀 변화로 장면 전환 후보를 빠르게 탐지하고, ffmpeg이 음성 음량 곡선·전체 음량 곡선·프레임별 밝기 데이터까지 나머지 세 가지 신호를 추출합니다.</p>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <!-- 2단계 -->
-    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">② AI 검증 — 장면이 진짜 바뀐 건지 확인합니다</p>
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">② 배치 검증 — 후보를 만들기 전에 컷 전체를 미리 확인합니다</p>
     <div class="card">
-      <p>첫 번째 단계에서 찾은 "장면 전환 후보"들을 AI가 컷 전후 화면 두 장을 비교해 실제로 다른 장면인지 확인합니다. 단순히 카메라 앵글이 바뀌거나 자막·그래픽이 들어온 것은 걸러냅니다. 동시에 컷 전후의 발화 내용을 읽어서 이야기 주제가 바뀌었는지도 파악합니다.</p>
+      <p>첫 번째 단계에서 찾은 "장면 전환 후보" 전체를 <b>마커를 만들기도 전에</b> 한 번에 몰아서 AI가 컷 전후 화면 두 장을 비교해 실제로 다른 장면인지 확인합니다. 단순히 카메라 앵글이 바뀌거나 자막·그래픽이 들어온 것은 걸러냅니다. 동시에 컷 전후의 발화 내용을 읽어서 이야기 주제가 바뀌었는지도 파악합니다. 이 결과는 다음 ③ 후보 생성 단계에서 그대로 재사용됩니다 — 여기서 이미 "진짜"로 확인된 컷은 나중에 다시 확인하지 않습니다.</p>
       <details style="margin-top:10px">
         <summary>자세한 기술 정보 보기</summary>
         <div class="detail-body">
           <div class="grid2" style="grid-template-columns: repeat(2, 1fr)">
-            <div class="card">
-              <h3><svg class="ic"><use href="#i-speech"/></svg> 음성 인식 (Whisper)</h3>
-              <p>OpenAI가 만든 음성 인식 AI입니다. 영상의 한국어 음성을 텍스트로 변환하고 각 문장의 시작·끝 시각을 밀리초 단위로 파악합니다. Apple Silicon GPU를 활용해 CPU보다 약 7배 빠르게 처리합니다.</p>
-            </div>
-            <div class="card">
-              <h3><svg class="ic"><use href="#i-video"/></svg> 영상 처리 (ffmpeg / PySceneDetect)</h3>
-              <p>영상 분석 전용 도구입니다. PySceneDetect가 픽셀 변화로 장면 전환 후보를 빠르게 탐지하고, ffmpeg이 음성 음량 곡선과 프레임별 밝기 데이터를 추출합니다.</p>
-            </div>
             <div class="card">
               <h3><svg class="ic"><use href="#i-film"/></svg> 장면 비교 AI (CLIP)</h3>
               <p>OpenAI의 이미지 이해 AI입니다. 컷 전후 프레임 두 장을 비교해 같은 장면인지 다른 장면인지를 0~1 유사도로 수치화합니다. 0.80 미만이면 진짜 장면 전환으로 확정합니다.</p>
@@ -496,13 +521,22 @@
           <li><span class="ck">✓</span>화면이 서서히 어두워지는 구간이고</li>
           <li><span class="ck">✓</span>가장 어두운 프레임에 허용 프레임이 있을 때</li>
           <li><span class="ck">✓</span>음성 침묵 동반 여부는 장르별 설정 (영화·드라마·케이팝은 배경음이 이어져도 통과)</li>
+          <li><span class="ck">✓</span>같은 지점에 컷(Path 2)과 페이드가 동시에 걸리면 페이드가 우선 — 기존 컷 마커를 페이드 마커로 승격시키고, 컷에서 확인된 근거(CLIP 유사도 등)는 그대로 유지</li>
         </ul>
       </div>
     </div>
 
-    <!-- 3단계-순위: 점수 -->
-    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">순위 매기기 — 통과한 후보에 점수를 매깁니다</p>
-    <p style="font-size:13px; color:var(--text-sub); margin-bottom:16px">위 세 가지 조건을 통과한 마커끼리 순위를 정할 때 아래 기준으로 점수를 매깁니다. 점수가 높을수록 1차 XML에서 앞에 추천됩니다.</p>
+    <!-- 4단계: 개별 재검증 -->
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">④ 개별 재검증 — 애매하게 남은 소수만 한 번 더 확인합니다</p>
+    <div class="card">
+      <p>② 배치 검증은 본편 구간(시작·끝 데드존 제외) 안의 컷만 미리 확인합니다. 그 범위 밖에 걸쳐 있거나 화면 추출에 실패해 값이 안 나온 극소수 컷은 ③에서 일단 "전환 후보"로 마커가 만들어진 뒤, 이 단계에서 개별로 한 번 더 CLIP 확인을 거칩니다.</p>
+      <p style="margin-top:8px">여기서 "장면 전환이 아니다"로 뒤집히면 마커 자체를 지우지는 않습니다 — 문장이 끝나고 침묵이 있었다는 근거는 여전히 유효하기 때문입니다. 대신 ③에서 미리 더했던 장면 전환 점수를 그대로 빼서 "검증전환"에서 "참고" 마커로 낮춰 표시합니다.</p>
+      <p style="margin-top:8px; font-size:13px; color:var(--text-sub)">대부분의 마커는 ②에서 이미 결론이 나 있어서, 이 단계를 거치는 건 소수입니다.</p>
+    </div>
+
+    <!-- 5단계 -->
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">⑤ 점수화 · 파일 출력 — 순위를 매겨 XML 두 종류를 만듭니다</p>
+    <p style="font-size:13px; color:var(--text-sub); margin-bottom:16px">여기까지 살아남은 마커끼리 순위를 정할 때 아래 기준으로 점수를 매깁니다. 점수가 높을수록 1차 XML에서 앞에 추천됩니다.</p>
     <details>
       <summary>점수 수치 보기</summary>
       <div class="detail-body">
@@ -512,14 +546,15 @@
               <tr><th>요소</th><th>점수</th><th>설명</th></tr>
             </thead>
             <tbody>
-              <tr><td>장면 전환 (AI 확인)</td><td class="plus">+8.0</td><td>진짜 화면이 바뀐 컷</td></tr>
+              <tr><td>장면 전환 (AI 확인)</td><td class="plus">+8.0</td><td>진짜 화면이 바뀐 컷 (장르 기본값 — 장르마다 다르게 조정됨)</td></tr>
               <tr><td>페이드 전환</td><td class="plus">+8.0(영화)</td><td>화면이 서서히 어두워지는 페이드 인/아웃 지점 (장르별 조정)</td></tr>
+              <tr><td>BGM 없는 조용한 구간</td><td class="plus">+장르별</td><td>배경음악까지 없는 완전히 조용한 지점 (기본 0, 드라마 등 일부 장르만 적용)</td></tr>
               <tr><td>주제 전환 (내용 비교 AI)</td><td class="plus">+4.0</td><td>전후 이야기 내용이 달라짐</td></tr>
               <tr><td>강한 화제 전환 표현</td><td class="plus">+3.0</td><td>"자 이제 / 다음으로 / 정리하자면…"으로 시작</td></tr>
               <tr><td>마무리 표현</td><td class="plus">+2.0</td><td>"겠습니다 / 이상입니다 / 마치겠습니다…"로 종료</td></tr>
               <tr><td>최우선 프레임(:00)</td><td class="plus">+1.0</td><td>가장 우선하는 허용 프레임 위치</td></tr>
               <tr><td>약한 전환 표현</td><td class="plus">+1.0</td><td>"자 / 이제 / 그러면…"으로 시작</td></tr>
-              <tr><td>AI 재확인 결과: 전환 아님</td><td class="minus">−8.0</td><td>장면이 실제로 바뀌지 않은 것으로 최종 판정</td></tr>
+              <tr><td>④ 재확인 결과: 전환 아님</td><td class="minus">위 "장면 전환" 점수만큼 환수</td><td>장면이 실제로 바뀌지 않은 것으로 최종 판정 — 처음에 더했던 점수를 그대로 빼서 취소</td></tr>
               <tr><td>말이 이어지는 표현</td><td class="minus">−2.0</td><td>"근데 / 사실 / 그리고" 등 연속 표현</td></tr>
               <tr><td>짧은 선행 문장</td><td class="minus">−1.5</td><td>앞 문장이 8자 미만 (말 조각 가능성)</td></tr>
               <tr><td>질문-자답 패턴</td><td class="minus">−1.0</td><td>자문자답 구간 중간은 광고 삽입 부적절</td></tr>
@@ -529,8 +564,7 @@
       </div>
     </details>
 
-    <!-- 4단계 -->
-    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">④ 파일 출력 — 두 종류의 XML이 만들어집니다</p>
+    <p style="font-size:14px; font-weight:700; margin:28px 0 12px; color:var(--text)">두 종류의 XML이 만들어집니다</p>
     <div class="grid2">
       <div class="card card-bl">
         <h3>1차 XML <span style="font-size:12px; color:var(--text-sub); font-weight:400">_adbreaks.xml</span></h3>
