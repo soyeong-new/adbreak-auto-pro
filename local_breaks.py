@@ -11,9 +11,9 @@
     CLIP 유사도 < 0.80인 실제 화면 전환이 허용 프레임에 정확히 착지하고,
     Whisper 문장/세그먼트 갭이 ±0.5s 이내에 있는 경우. 침묵 불필요.
 
-출력 두 가지:
-  1차 (_adbreaks.xml)    : 간격 규칙 적용(첫 광고 3~10분, 이후 10~15분). 전체 마커 대상.
-  2차 (_adbreaks_all.xml): Path 2 컷 앵커 마커만, 간격 제한 없이 전체.
+출력 두 가지 (analyzer.py에서 조립):
+  1차 (_adbreaks.xml)    : 간격 규칙 적용(첫 광고 3~10분, 이후 10~15분). 슬롯별 상위 최대 5개.
+  2차 (_adbreaks_all.xml): Path 1/2/3 전체 후보, 간격 제한 없이 전체. 1차는 항상 이 부분집합.
 
 주요 함수:
   select_ad_breaks_local() — 마커 후보 생성 전체
@@ -572,7 +572,8 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 continue
             # (1) 컷·페이드 중복: SCENE_RADIUS 이내 기존 Path 1/2 마커가 있으면,
             #     새 마커를 만들지 않고 그 마커를 '페이드 앵커'로 승격(증거 병합).
-            #     → CLIP 재검증 면제 + 2차 XML 포함. 컷의 CLIP·점수 증거는 그대로 보존.
+            #     → CLIP 재검증 면제 + 2차 XML 포함. 컷의 CLIP·점수 증거는 유지하고
+            #     w_fade를 가산 — 컷/침묵과 페이드 증거가 동시에 있으면 더 강한 신호.
             overlap = [m for m in existing
                        if abs(fade_t - m["time"]) <= SCENE_RADIUS]
             if overlap:
@@ -580,8 +581,9 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 if not m.get("fade_anchor"):
                     m["fade_anchor"] = True
                     m["cut_anchor"] = True
+                    m["score"] = round(m["score"] + _w_fade, 2)
                     m["reason"] += (f"; 페이드 V 꼭짓점 겹침({fade_t:.2f}s)"
-                                    " — 페이드 우선·증거 병합")
+                                    f" — 페이드 우선·증거 병합(+{_w_fade:.1f})")
                 continue
             # (2) 페이드끼리 SCENE_RADIUS 이내 중복이면 건너뜀
             if any(abs(fade_t - t) <= SCENE_RADIUS for t in placed_fades):

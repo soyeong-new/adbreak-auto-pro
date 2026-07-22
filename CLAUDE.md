@@ -41,24 +41,28 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 
 ## 마커 생성 세 가지 경로
 
+출력 XML 두 가지 — **2차(`_adbreaks_all.xml`)는 Path 1·2·3 전체 후보, 간격 제한
+없음. 1차(`_adbreaks.xml`)는 그 전체 풀에서 슬롯(첫 광고 3~10분, 이후 10~15분
+간격)별 상위 최대 5개(`n_alternatives`)를 뽑은 것 — 1차는 항상 2차의 부분집합.**
+(2026-07: 예전엔 2차가 컷 앵커만 담아 1차보다 적게 나올 수 있었음 — 수정됨.)
+
 **Path 1 — 침묵 기반**
 - 문장 종결 직후 적응형 침묵 ≥ 0.5s
 - 침묵 안에 허용 프레임 존재
 - CLIP 확인 컷 ±1.0s 이내면 `has_cut=True` 업그레이드
-- 1차 XML에 포함 (전체 마커 대상, 간격 규칙 적용)
 
 **Path 2 — 컷 앵커**
 - CLIP 유사도 < 0.80인 실제 화면 전환
 - 컷 시각이 정확히 허용 프레임 (스냅 없음)
 - Whisper 문장/세그먼트 갭 ±0.5s 이내
-- 2차 XML (_adbreaks_all.xml) 에만 포함
 
 **Path 3 — 페이드 앵커**
 - ffmpeg 밝기 분석으로 탐지한 페이드 V 꼭짓점(암전)
 - 침묵 처리는 장르별 (`fade_require_silence` 참조)
 - CLIP 재검증 없음 (암전 프레임은 CLIP 무의미)
 - 대사 기반 점수 제외, `w_fade`·:00 프레임·마무리 표현만 채점
-- 2차 XML 에만 포함
+- 컷/침묵 마커와 SCENE_RADIUS(0.3s) 이내로 겹치면 새 마커 대신 기존 마커를
+  페이드 앵커로 승격 + `w_fade`를 점수에 가산(증거 병합, 2026-07)
 
 ## 점수 체계 (local_breaks.py)
 
