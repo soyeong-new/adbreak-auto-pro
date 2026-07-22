@@ -6,7 +6,6 @@
   transcribe()              — Whisper 음성 전사 (mlx-whisper / faster-whisper 폴백)
   detect_scenes()           — PySceneDetect 장면 전환 탐지 (ContentDetector threshold=27)
   extract_voice_envelope()  — ffmpeg으로 250~3000Hz 음량 곡선 추출 (침묵 판별용)
-  get_scene_proxy()         — detect_scenes/detect_fade_cuts용 저해상도 프록시 생성(fps 동일 보장)
   get_duration()            — ffprobe로 영상 길이(초) 반환
   get_fps()                 — ffprobe로 영상 프레임레이트 반환
 
@@ -30,12 +29,6 @@ ENV_HZ = 20                 # voice envelope resolution
 # Path 3 — 페이드 인/아웃 탐지 파라미터
 FADE_DARK_THRESH = 10.0     # 0-255: 이 값 미만이면 "어두운 프레임"으로 판단
 FADE_MIN_FRAMES  = 5        # 연속 어두운 프레임이 최소 이 수 이상이어야 페이드로 인정
-
-# 씬/페이드 탐지용 저해상도 프록시 — 픽셀 수만 줄이고 fps는 원본과 동일해야 함
-# (허용 프레임 판정이 fps 기준이라 타이밍이 어긋나면 안 됨). fps가 안 맞으면
-# 프록시를 버리고 원본으로 폴백.
-PROXY_WIDTH = 640
-FPS_TOLERANCE = 0.01
 
 _fw_model = None
 
@@ -131,46 +124,6 @@ def transcribe(video_path, progress=None):
     return out
 
 
-def _proxy_path(video_path):
-    st = os.stat(video_path)
-    key = f"{os.path.splitext(os.path.basename(video_path))[0]}_{st.st_size}"
-    return os.path.join(CACHE_DIR, f"{key}.proxy.mp4")
-
-
-def get_scene_proxy(video_path, progress=None):
-    """Low-res (PROXY_WIDTH-wide) stand-in for video_path, used only to decode
-    frames for detect_scenes/detect_fade_cuts. Same fps as the source so cut
-    timestamps still line up with the original -- verified after encoding, and
-    the original video_path is returned instead if that check fails for any
-    reason (build error, fps mismatch), so callers always get a valid path.
-    Cached next to the other per-video artifacts.
-    """
-    proxy = _proxy_path(video_path)
-    src_fps = get_fps(video_path)
-    if os.path.exists(proxy):
-        if src_fps is not None and abs((get_fps(proxy) or 0) - src_fps) < FPS_TOLERANCE:
-            return proxy
-        os.remove(proxy)  # stale/bad proxy from a previous run -- rebuild below
-
-    if progress:
-        progress("분석용 저해상도 프록시 생성 중...")
-    tmp = f"{proxy}.{os.getpid()}.tmp.mp4"
-    cmd = ["ffmpeg", "-y", "-v", "error", "-i", video_path,
-           "-vf", f"scale={PROXY_WIDTH}:-2", "-an",
-           "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", tmp]
-    try:
-        subprocess.run(cmd, check=True)
-        proxy_fps = get_fps(tmp)
-        if src_fps is None or proxy_fps is None or abs(proxy_fps - src_fps) >= FPS_TOLERANCE:
-            raise ValueError(f"proxy fps mismatch: source={src_fps} proxy={proxy_fps}")
-        os.replace(tmp, proxy)  # atomic -- safe even if another thread races here
-        return proxy
-    except Exception:
-        if os.path.exists(tmp):
-            os.remove(tmp)
-        return video_path
-
-
 def detect_scenes(video_path, progress=None):
     """Scene-cut times (seconds) via PySceneDetect ContentDetector. Cached."""
     cached = _load_cache(video_path, "scenes")
@@ -180,8 +133,7 @@ def detect_scenes(video_path, progress=None):
     if progress:
         progress("장면 전환 감지 중...")
     from scenedetect import detect, ContentDetector
-    proxy = get_scene_proxy(video_path, progress)
-    scene_list = detect(proxy, ContentDetector(threshold=27))
+    scene_list = detect(video_path, ContentDetector(threshold=27))
     cuts = [round(start.get_seconds(), 3)
             for i, (start, _end) in enumerate(scene_list) if i > 0]
     _save_cache(video_path, "scenes", {"scenes": cuts})
@@ -205,10 +157,9 @@ def detect_fade_cuts(video_path, progress=None):
     if progress:
         progress("페이드 인/아웃 탐지 중...")
 
-    proxy = get_scene_proxy(video_path, progress)
     import numpy as np
     W, H = 32, 18
-    cmd = ["ffmpeg", "-v", "error", "-i", proxy,
+    cmd = ["ffmpeg", "-v", "error", "-i", video_path,
            "-vf", f"scale={W}:{H}",
            "-an", "-f", "rawvideo", "-pix_fmt", "gray", "-"]
     raw = subprocess.run(cmd, capture_output=True).stdout

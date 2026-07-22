@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from pipeline import (get_duration, get_fps, transcribe, detect_scenes,
                       extract_voice_envelope, extract_loudness_envelope,
-                      detect_fade_cuts, get_scene_proxy)
+                      detect_fade_cuts)
 from local_breaks import select_ad_breaks_local, pick_primary, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
@@ -118,11 +118,6 @@ def run_analysis(video_path, settings=None, progress=None):
             fps = float(fps_mode)
         except (TypeError, ValueError):
             fps = DEFAULT_FPS
-
-    # detect_scenes/detect_fade_cuts both decode through the same low-res proxy
-    # (get_scene_proxy) -- build it here, once, before the parallel block below,
-    # so the two don't race and pay for the encode twice.
-    get_scene_proxy(video_path, progress)
 
     # Stages 2-4 (자막 변환 · 장면 감지 · 음성 분석) are independent — they each
     # read the video on their own and don't use each other's output, so we run
