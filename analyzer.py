@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pipeline import (get_duration, get_fps, transcribe, detect_scenes,
                       extract_voice_envelope, extract_loudness_envelope,
                       detect_fade_cuts, get_scene_proxy)
-from local_breaks import select_ad_breaks_local, pick_primary, midpoint_silence_marker, midpoint_sentence_marker, W_SCENE
+from local_breaks import select_ad_breaks_local, pick_primary, midpoint_silence_marker, midpoint_sentence_marker, midpoint_cut_marker, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
 from xml_output import build_candidate_xml
@@ -209,6 +209,8 @@ def run_analysis(video_path, settings=None, progress=None):
                 midpoint_sentence_marker(segments, duration, 20.5, duration - 3.0, fps, drop_frame),
             ) if c]
             mm = min(cands, key=lambda c: abs(c["time"] - mid), default=None)  # 중간에 더 가까운 쪽
+            if not mm:  # 대사 공백·문장 끝이 모두 없으면(대사 없는 영상) 중간에 가까운 CLIP 컷
+                mm = midpoint_cut_marker(clip_real_cuts, duration, 20.5, duration - 3.0, fps, drop_frame)
             if mm and (cur is None or cur <= 20 or abs(mm["time"] - mid) < abs(cur - mid)):
                 markers = sorted(markers + [mm], key=lambda m: m["time"])
                 primary_slots = [[mm]]

@@ -219,6 +219,32 @@ def midpoint_sentence_marker(segments, duration, min_t, max_t, fps=FPS, drop_fra
             "next_sentence": b, "kill_reason": None}
 
 
+def midpoint_cut_marker(real_cuts, duration, min_t, max_t, fps=FPS, drop_frame=False):
+    """영상 중간(duration/2)에 가장 가까운 CLIP 확인 컷 마커. [min_t, max_t] 안의 컷만 허용.
+
+    숏폼에서 대사 공백·문장 끝이 모두 없을 때(대사 없는 영상)의 마지막 폴백.
+    Path 2와 같이 컷에서 가장 가까운 허용 프레임에 둔다.
+    """
+    mid = duration / 2.0
+    best = None
+    for c in real_cuts:
+        if not (min_t <= c <= max_t):
+            continue
+        f = _nearest_allowed_frame(c, fps, drop_frame)
+        if f is None:
+            continue
+        t = frame_to_seconds(f, fps)
+        if min_t <= t <= max_t and (best is None or abs(t - mid) < abs(best[0] - mid)):
+            best = (t, f)
+    if best is None:
+        return None
+    t, f = best
+    return {"time": t, "frame": f, "timecode": frame_to_timecode(f, fps, drop_frame),
+            "tier": frame_tier(f, fps, drop_frame), "has_cut": True, "has_signal": False,
+            "score": 0.0, "reason": "영상 중간 컷", "ended_sentence": "",
+            "next_sentence": "", "kill_reason": None}
+
+
 def _get_ff(frame, fps, drop_frame):
     """프레임의 FF(초 안 위치) 반환. DF면 SMPTE DF 공식 사용."""
     if drop_frame and abs(fps - 29.97) < 0.1:
