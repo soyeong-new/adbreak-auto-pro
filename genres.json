@@ -104,5 +104,35 @@
     "_검증상태": {
       "clip_threshold": "측정 기반 — JCN(자취남) 30편, production 설정(genres.json 가중치 적용): 0.80→0.85로 정답 재현 31%→46%(+15pp), 컷앵커 마커 편당 5→11개. 같은 집 안 약한 컷(0.80~0.85)이 광고점이라 완화. (eval/measure_recall.py 자취남 --set clip_threshold=0.80 으로 재현)"
     }
+  },
+  {
+    "id": "shortform",
+    "label": "숏폼",
+    "icon": "📱",
+    "ui_desc": "짧은 영상 · 대화 중심\n중간 대사 종료점",
+    "folder": "숏폼",
+    "folder_desc": "50초 이상 영상용. BGM은 허용하고, 음성 대역에서 짧은 대사 공백을 찾아 영상 중간에 가까운 후보 하나를 우선합니다.",
+    "duration_min": 0.8333,
+    "first_min": 0.5,
+    "first_max": 1.5,
+    "gap_min": 0.5,
+    "gap_max": 1,
+    "intro_deadzone": 0.5,
+    "outro_deadzone": 0.5,
+    "w_scene": 6,
+    "w_topic_change": 2,
+    "silence_min": 0.2,
+    "w_fade": 8,
+    "fade_require_silence": true,
+    "fade_silence_bonus": 0,
+    "clip_threshold": 0.8,
+    "target_midpoint": true,
+    "midpoint_window": 20,
+    "cut_requires_silence": true,
+    "_검증상태": {
+      "silence_min": "초기값 — 대사 종료를 찾기 위한 0.2초 기준. 숏폼 샘플로 조정 필요",
+      "midpoint_window": "초기값 — 영상 중간 ±15초 안에서 대표 마커 선택. 숏폼 샘플로 조정 필요",
+      "w_fade": "초기값 — 페이드 신호를 강하게 반영하는 8점. 숏폼 샘플로 조정 필요"
+    }
   }
 ]

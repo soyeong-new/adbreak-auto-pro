@@ -160,6 +160,65 @@ def _find_silence(voice_env, t0, t1, noise_floor, min_dur=None):
     return None
 
 
+def midpoint_silence_marker(voice_env, duration, min_t, max_t, min_dur=0.2,
+                            fps=FPS, drop_frame=False):
+    """영상 중간(duration/2)에 가장 가까운 대사 공백 마커. [min_t, max_t] 안의 시각만 허용.
+
+    숏폼에서 후보가 없거나 앞쪽(20초 이하)에만 있을 때의 폴백. 공백 판정은
+    _find_silence와 같은 적응형 기준(구간별 대사 음량 + 영상 바닥 소음)을 쓴다.
+    """
+    if not voice_env or not voice_env.get("db"):
+        return None
+    db, rate = voice_env["db"], voice_env["rate"]
+    nf = _noise_floor(voice_env)
+    need = max(1, int(min_dur * rate))
+    mid = duration / 2.0
+    best, run = None, 0
+    for i in range(len(db) + 1):
+        if i < len(db) and db[i] < (1.0 - SILENCE_K) * _local_speech_db(voice_env, i / rate) + SILENCE_K * nf:
+            run += 1
+            continue
+        if run >= need:
+            s0, s1 = (i - run) / rate, i / rate
+            f = _allowed_frame_in(max(s0, min_t), min(s1, max_t), fps, drop_frame)
+            if f is not None:
+                t = f / fps
+                if best is None or abs(t - mid) < abs(best[0] - mid):
+                    best = (t, f)
+        run = 0
+    if best is None:
+        return None
+    t, f = best
+    return {"time": t, "frame": f, "timecode": frame_to_timecode(f, fps, drop_frame),
+            "tier": frame_tier(f, fps, drop_frame), "has_cut": False, "has_signal": False,
+            "score": 0.0, "reason": "영상 중간 대사 공백", "ended_sentence": "",
+            "next_sentence": "", "kill_reason": None}
+
+
+def midpoint_sentence_marker(segments, duration, min_t, max_t, fps=FPS, drop_frame=False):
+    """영상 중간에 가장 가까운 문장 끝 마커 (대사 공백이 없을 때의 마지막 폴백).
+
+    문장 끝(~다음 문장 시작, 최소 0.4초 여유) 안의 허용 프레임에 찍는다.
+    """
+    sents = build_sentences(segments)
+    mid, best = duration / 2.0, None
+    for i, sn in enumerate(sents[:-1]):
+        end, nxt = sn["end"], sents[i + 1]["start"]
+        f = _allowed_frame_in(end, max(nxt, end + 0.4), fps, drop_frame)
+        if f is None:
+            continue
+        t = f / fps
+        if min_t <= t <= max_t and (best is None or abs(t - mid) < abs(best[0] - mid)):
+            best = (t, f, sn["text"], sents[i + 1]["text"])
+    if best is None:
+        return None
+    t, f, a, b = best
+    return {"time": t, "frame": f, "timecode": frame_to_timecode(f, fps, drop_frame),
+            "tier": frame_tier(f, fps, drop_frame), "has_cut": False, "has_signal": False,
+            "score": 0.0, "reason": "영상 중간 문장 끝", "ended_sentence": a,
+            "next_sentence": b, "kill_reason": None}
+
+
 def _get_ff(frame, fps, drop_frame):
     """프레임의 FF(초 안 위치) 반환. DF면 SMPTE DF 공식 사용."""
     if drop_frame and abs(fps - 29.97) < 0.1:
@@ -463,6 +522,19 @@ def select_ad_breaks_local(segments, duration, settings=None,
             if not in_gap:
                 continue  # 컷이 문장/세그먼트 중간에 있음 → 건너뜀
 
+            # 숏폼은 컷이 대사 종료와 실제 음성 공백에 겹칠 때만 컷 앵커로 쓴다.
+            # 음성 대역을 검사하므로 BGM이 계속 재생되어도 대사 종료를 탐지할 수 있다.
+            if s.get("cut_requires_silence"):
+                cut_silence = _find_silence(
+                    voice_env,
+                    cut_t - CUT_BOUNDARY_WINDOW,
+                    cut_t + CUT_BOUNDARY_WINDOW,
+                    noise_floor,
+                    min_dur=_sil_min,
+                )
+                if cut_silence is None or not (cut_silence[0] <= cut_t <= cut_silence[1]):
+                    continue
+
             # 마커를 컷 시간에서 가장 가까운 허용 프레임(:00/:01/:02/:03/:28/:29)에 배치.
             frame = _nearest_allowed_frame(cut_t, fps, drop_frame)
             if frame is None:
@@ -691,6 +763,21 @@ def pick_primary(markers, duration, settings=None):
     s = {**DEFAULTS, **(settings or {})}
     last = duration - s["outro_deadzone"]
     ms = sorted(markers, key=lambda m: m["time"])
+
+    if s.get("target_midpoint"):
+        target = duration * 0.5
+        eligible = [
+            m for m in ms
+            if s["intro_deadzone"] <= m["time"] <= last
+        ]
+        if not eligible:
+            return []
+        winner = min(
+            eligible,
+            key=lambda m: (abs(m["time"] - target), -m["score"]),
+        )
+        return [[winner]]
+
     slots, used = [], set()
     prev = None
     while True:

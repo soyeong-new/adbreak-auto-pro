@@ -116,23 +116,28 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         # UI sends spacing rules / dead zones in minutes; convert to seconds.
         settings = {}
+        raw_settings = data.get("settings", {})
         for key in ("first_min", "first_max", "gap_min", "gap_max",
-                    "intro_deadzone", "outro_deadzone"):
-            val = data.get("settings", {}).get(key)
+                    "intro_deadzone", "outro_deadzone", "duration_min", "duration_max"):
+            val = raw_settings.get(key)
             if val is not None:
                 settings[key] = float(val) * 60.0
 
         # 장르 가중치 — 분 변환 없이 그대로 사용
         for key in ("w_scene", "w_topic_change", "w_fade", "fade_silence_bonus",
                     "clip_threshold", "w_quiet_cut"):
-            val = data.get("settings", {}).get(key)
+            val = raw_settings.get(key)
             if val is not None:
                 settings[key] = float(val)
-        val = data.get("settings", {}).get("silence_min")
+        val = raw_settings.get("silence_min")
         if val is not None:
             settings["silence_min"] = float(val)
+        settings["shortform_mode"] = bool(raw_settings.get("shortform_mode", False))
+        settings["target_midpoint"] = bool(raw_settings.get("target_midpoint", False))
+        settings["midpoint_window"] = float(raw_settings.get("midpoint_window", 0))
+        settings["cut_requires_silence"] = bool(raw_settings.get("cut_requires_silence", False))
         # 페이드 침묵 관문 여부 (bool)
-        val = data.get("settings", {}).get("fade_require_silence")
+        val = raw_settings.get("fade_require_silence")
         if val is not None:
             settings["fade_require_silence"] = bool(val)
 
@@ -182,14 +187,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             try:
                 print(f"\n[{idx}/{len(videos)} 분석 시작] {video}", flush=True)
                 duration = get_duration(video)
-                if duration < 300:
+                shortform_mode = settings.get("shortform_mode", False)
+                shortform_min = settings.get("duration_min", 50.0)
+                outside_shortform_range = shortform_mode and duration < shortform_min
+                too_short_for_regular = not shortform_mode and duration < 300
+                if outside_shortform_range or too_short_for_regular:
                     mins = duration / 60
-                    print(f"[{idx}/{len(videos)} 건너뜀] 영상 길이 {mins:.1f}분 — 5분 미만은 분석하지 않습니다.", flush=True)
+                    reason = (f"숏폼 프리셋은 {shortform_min:g}초 이상 영상만 분석합니다."
+                              if outside_shortform_range else "5분 미만은 분석하지 않습니다.")
+                    print(f"[{idx}/{len(videos)} 건너뜀] 영상 길이 {mins:.1f}분 — {reason}", flush=True)
                     results.append({
                         "video_path": video,
                         "video_name": os.path.basename(video),
                         "duration": duration,
                         "skipped_short": True,
+                        "skip_reason": reason,
                         "primary_count": 0,
                         "marker_count": 0,
                         "primary_slots": [],

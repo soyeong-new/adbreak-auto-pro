@@ -280,6 +280,10 @@
         <div class="g-icon"><svg class="ic"><use href="#i-home"/></svg></div><div class="g-name">자취남</div>
         <div class="g-desc">일상 브이로그<br>요리 · 생활</div>
       </div>
+      <div class="genre-card" data-genre="shortform" onclick="selectGenre('shortform')">
+        <div class="g-icon">📱</div><div class="g-name">숏폼</div>
+        <div class="g-desc">50초 이상<br>중간 대사 종료점</div>
+      </div>
     </div>
 
     <!-- 세부 조정 -->
@@ -333,6 +337,11 @@
           <div><div class="t-lbl">시작 데드존</div><input id="idz" type="number" value="3"></div>
           <div><div class="t-lbl">끝 데드존</div><input id="odz" type="number" value="3"></div>
         </div>
+      <div id="shortform-settings" class="t-grid" style="display:none;margin-top:12px">
+        <div><div class="t-lbl">중간 허용 범위 (±초)</div><input id="midwin" type="number" min="0" step="1" value="15"></div>
+        <div><div class="t-lbl">대사 공백 최소 (초)</div><input id="shortsil" type="number" min="0.1" step="0.1" value="0.2"></div>
+      </div>
+      <div id="shortform-note" class="gap-sub" style="display:none;margin-top:8px">숏폼은 첫 광고 시간·광고 간격 대신 영상 중간에 가까운 후보 하나를 선택합니다. 시작·끝 데드존, 중간 허용 범위, 대사 공백 길이는 조절할 수 있습니다. BGM은 허용하고 음성 대역으로 대사 종료를 찾습니다.</div>
       </div>
     </div>
   </div>
@@ -373,7 +382,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const blobUrl = txt => URL.createObjectURL(new Blob([txt],{type:'application/xml'}));
+const blobUrl = txt => URL.createObjectURL(new Blob([txt],{type:'application/octet-stream'}));
 
 // ── 파일 입력 (textarea + 드래그 + 붙여넣기) ────────
 function normalizePathInput(text){
@@ -426,6 +435,10 @@ fetch('/genres.json').then(r=>r.json()).then(list=>{
       gmax: g.gap_max,
       idz:  g.intro_deadzone,
       odz:  g.outro_deadzone,
+      durationMin: g.duration_min,
+      targetMidpoint: g.target_midpoint ?? false,
+      midpointWindow: g.midpoint_window ?? 0,
+      cutRequiresSilence: g.cut_requires_silence ?? false,
     };
   });
 });
@@ -443,6 +456,12 @@ function selectGenre(g){
   $('gmax').value=p.gmax;
   $('idz').value=p.idz;
   $('odz').value=p.odz;
+  $('shortform-settings').style.display = g === 'shortform' ? 'grid' : 'none';
+  $('shortform-note').style.display = g === 'shortform' ? 'block' : 'none';
+  if (g === 'shortform') {
+    $('midwin').value = p.midpointWindow;
+    $('shortsil').value = p.sm;
+  }
   _activeGenre = g;        // 전송 시 fade_require_silence/bonus 참조
 }
 let _activeGenre = 'talk';
@@ -471,6 +490,11 @@ async function analyze(){
         video_paths: paths,
         fps_mode: document.querySelector('input[name="fps_mode"]:checked').value,
         settings:{
+          shortform_mode: _activeGenre === 'shortform',
+          duration_min: (PRESETS[_activeGenre]||{}).durationMin,
+          target_midpoint: (PRESETS[_activeGenre]||{}).targetMidpoint ?? false,
+          midpoint_window: parseFloat($('midwin').value || 15),
+          cut_requires_silence: (PRESETS[_activeGenre]||{}).cutRequiresSilence ?? false,
           first_min:      parseFloat($('fmin').value),
           first_max:      parseFloat($('fmax').value),
           gap_min:        parseFloat($('gmin').value),
@@ -479,7 +503,7 @@ async function analyze(){
           outro_deadzone: parseFloat($('odz').value),
           w_scene:        parseFloat($('w_scene').value),
           w_topic_change: parseFloat($('w_topic').value),
-          silence_min:    (PRESETS[_activeGenre]||{}).sm ?? 0.5,
+          silence_min:    _activeGenre === 'shortform' ? parseFloat($('shortsil').value || 0.2) : ((PRESETS[_activeGenre]||{}).sm ?? 0.5),
           w_fade:         parseFloat($('w_fade').value),
           fade_require_silence: (PRESETS[_activeGenre]||{}).frs ?? true,
           fade_silence_bonus:   (PRESETS[_activeGenre]||{}).fsb ?? 0,
@@ -507,7 +531,14 @@ function renderResults(data){
 
   // 일괄 다운로드 (2편 이상)
   const downloadable = _results.filter(d=>!d.skipped_short);
-  if(downloadable.length>1){
+  if(_activeGenre==='shortform'){
+    const rows=shortRows(data);
+    h+=`<div class="bulk-bar">
+      <span class="bulk-label">총 ${rows.length}편 · 확인 필요 ${rows.filter(shortWarn).length}편</span>
+      <div class="dl-group"><a class="btn-dl" href="${shortCsvUrl(rows)}" download="shortform_midpoint.csv"><svg class="ic"><use href="#i-download"/></svg> 중간 마커 CSV</a></div></div>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:13px">`+rows.filter(shortWarn).map(r=>
+      `<tr style="${shortWarn(r)?'background:#fff3a0':''}"><td style="padding:4px 8px;border:1px solid var(--line)">${esc(r.name)}</td><td style="padding:4px 8px;border:1px solid var(--line);width:110px">${r.tc}</td></tr>`).join('')+`</table>`;
+  } else if(downloadable.length>1){
     h+=`<div class="bulk-bar">
       <span class="bulk-label">총 ${downloadable.length}편 일괄 다운로드</span>
       <div class="dl-group">
@@ -521,6 +552,22 @@ function renderResults(data){
     h+=`<div class="res-card"><span class="err-msg"><svg class="ic"><use href="#i-alert"/></svg> ${esc(e.path)}<br>${esc(e.error)}</span></div>`;
   });
   $('result').innerHTML = h||'<div class="res-card err-msg">결과가 없습니다.</div>';
+}
+
+// 숏폼: 입력한 영상 전부 (분석 못 했거나 후보 없으면 타임코드 빈칸). 20초 이하는 노란색 표시 대상.
+function shortRows(data){
+  const rows=(data.results||[]).map(d=>{
+    const m=((d.primary_slots||[])[0]||[])[0];
+    return {name:d.video_name, tc:m?m.timecode:'', sec:m?m.time:null};
+  });
+  (data.errors||[]).forEach(e=>rows.push({name:e.path.split('/').pop(), tc:'', sec:null}));
+  return rows;
+}
+const shortWarn=r=>r.sec===null||r.sec<=20;
+// 파일명 + 타임코드 + 확인필요 CSV (UTF-8 BOM — 엑셀 한글용). CSV는 색을 못 담아 세 번째 열로 표시.
+function shortCsvUrl(rows){
+  const body=rows.map(r=>`"${r.name.replace(/"/g,'""')}",${r.tc},${shortWarn(r)?'확인필요':''}`);
+  return URL.createObjectURL(new Blob(['\ufeff파일명,타임코드,확인\n'+body.join('\n')],{type:'text/csv'}));
 }
 
 async function dlZip(pass){
@@ -555,7 +602,11 @@ function renderOne(d, ri){
     </div>`;
 
   if(d.skipped_short){
-    h+=`<div class="notice-msg">이 영상은 5분 미만이므로 XML을 생성하지 않습니다.</div>`;
+    h+=`<div class="notice-msg">${esc(d.skip_reason || '이 영상은 5분 미만이므로 XML을 생성하지 않습니다.')}</div>`;
+  } else if(_activeGenre==='shortform'){
+    const m=((d.primary_slots||[])[0]||[])[0];
+    h+=`<div class="notice-msg" style="${shortWarn({sec:m?m.time:null})?'background:#fff3a0;color:#6b5600':''}">${m?m.timecode:'&nbsp;'}</div></div>`;
+    return h;
   } else {
     h+=`<div class="dl-group">
       <a class="btn-dl" href="${blobUrl(d.xml_primary)}" download="${stem}_adbreaks.xml"><svg class="ic"><use href="#i-download"/></svg> 1차 마커 XML (${d.primary_count}구간)</a>

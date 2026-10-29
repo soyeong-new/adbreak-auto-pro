@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pipeline import (get_duration, get_fps, transcribe, detect_scenes,
                       extract_voice_envelope, extract_loudness_envelope,
                       detect_fade_cuts, get_scene_proxy)
-from local_breaks import select_ad_breaks_local, pick_primary, W_SCENE
+from local_breaks import select_ad_breaks_local, pick_primary, midpoint_silence_marker, midpoint_sentence_marker, W_SCENE
 from scene_verify import is_real_scene_change, batch_scene_similarities, SAME_THRESHOLD
 from text_similarity import batch_text_similarities
 from xml_output import build_candidate_xml
@@ -103,6 +103,10 @@ def run_analysis(video_path, settings=None, progress=None):
     duration = get_duration(video_path)
     detected_fps = get_fps(video_path)
 
+    # 숏폼(target_midpoint): 1분 이하 영상은 데드존이 후보 구간을 거의 지우므로 0으로 둔다.
+    if (settings or {}).get("target_midpoint") and duration <= 60:
+        settings = {**settings, "intro_deadzone": 0, "outro_deadzone": 0}
+
     # fps_mode: "auto" | "30" | "29.97_ndf" | "29.97_df"
     # watcher는 설정값 없이 호출 → 기본 30fps NDF 고정.
     fps_mode   = (settings or {}).get("fps_mode", "30")
@@ -162,14 +166,17 @@ def run_analysis(video_path, settings=None, progress=None):
 
     if progress:
         progress("광고 지점 후보 탐색 중...")
-    markers = select_ad_breaks_local(segments, duration, settings,
-                                     scene_cuts=scenes, voice_env=voice,
-                                     loudness_env=loudness,
-                                     clip_real_cuts=clip_real_cuts,
-                                     clip_checked_cuts=clip_checked_cuts,
-                                     text_sims=text_sims,
-                                     fade_cuts=fades,
-                                     fps=fps, drop_frame=drop_frame)
+    def _select(st):
+        return select_ad_breaks_local(segments, duration, st,
+                                      scene_cuts=scenes, voice_env=voice,
+                                      loudness_env=loudness,
+                                      clip_real_cuts=clip_real_cuts,
+                                      clip_checked_cuts=clip_checked_cuts,
+                                      text_sims=text_sims,
+                                      fade_cuts=fades,
+                                      fps=fps, drop_frame=drop_frame)
+
+    markers = _select(settings)
 
     # Attach batch CLIP similarity to clip_preconfirmed markers.
     for m in markers:
@@ -185,6 +192,28 @@ def run_analysis(video_path, settings=None, progress=None):
     # 2nd pass (xml_all below): every Path 1/2/3 candidate, no gap_min/spacing
     #   limit — primary_flat is always a subset of this full pool.
     primary_slots = pick_primary(markers, duration, settings)
+    # 숏폼: 데드존 안에서 후보를 못 찾았으면 데드존 없이 한 번 더 분석한다 (캐시 재사용).
+    if (not primary_slots and settings.get("target_midpoint")
+            and (settings.get("intro_deadzone") or settings.get("outro_deadzone"))):
+        return run_analysis(video_path, {**settings, "intro_deadzone": 0, "outro_deadzone": 0}, progress)
+    # 숏폼: 데드존 30초(1분 이하는 0) → 데드존 0 순으로 찾고도 마커가 없거나 20초 이하이거나 영상 중간 ±midpoint_window 밖일 때, 영상 전체에서 중간에 가장 가까운 대사 공백/문장 끝 중 더 가까운 쪽을 쓴다
+    # (앞 20초와 맨 뒤 3초는 제외 — 20초 이하 마커는 내지 않는다). 침묵 조건·공백 길이는 완화하지 않는다.
+    if settings.get("target_midpoint"):
+        mid = duration / 2
+        win = float(settings.get("midpoint_window", 20))
+        cur = primary_slots[0][0]["time"] if primary_slots else None
+        if cur is None or cur <= 20 or abs(cur - mid) > win:
+            cands = [c for c in (
+                midpoint_silence_marker(voice, duration, 20.5, duration - 3.0,
+                                        float(settings.get("silence_min", 0.2)), fps, drop_frame),
+                midpoint_sentence_marker(segments, duration, 20.5, duration - 3.0, fps, drop_frame),
+            ) if c]
+            mm = min(cands, key=lambda c: abs(c["time"] - mid), default=None)  # 중간에 더 가까운 쪽
+            if mm and (cur is None or cur <= 20 or abs(mm["time"] - mid) < abs(cur - mid)):
+                markers = sorted(markers + [mm], key=lambda m: m["time"])
+                primary_slots = [[mm]]
+            elif cur is None or cur <= 20:
+                primary_slots = []  # 대사 공백도 없으면 비워 둔다 (UI에서 노란색)
     primary_flat = [m for slot in primary_slots for m in slot]
     prim_times = {m["time"] for m in primary_flat}
     for m in markers:
