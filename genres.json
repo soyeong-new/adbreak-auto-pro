@@ -121,18 +121,22 @@
     "outro_deadzone": 0.5,
     "w_scene": 6,
     "w_topic_change": 2,
-    "silence_min": 0.2,
-    "w_fade": 8,
+    "silence_min": 0.5,
+    "w_fade": 20,
     "fade_require_silence": true,
     "fade_silence_bonus": 0,
     "clip_threshold": 0.8,
     "target_midpoint": true,
-    "midpoint_window": 20,
+    "midpoint_window": 10,
     "cut_requires_silence": true,
+    "free_frames": true,
+    "grid_priority_window": 10,
     "_검증상태": {
-      "silence_min": "초기값 — 대사 종료를 찾기 위한 0.2초 기준. 숏폼 샘플로 조정 필요",
-      "midpoint_window": "초기값 — 영상 중간 ±15초 안에서 대표 마커 선택. 숏폼 샘플로 조정 필요",
-      "w_fade": "초기값 — 페이드 신호를 강하게 반영하는 8점. 숏폼 샘플로 조정 필요"
+      "silence_min": "초기값 — 대사 종료를 찾기 위한 0.5초 기준(0.2→0.5 상향). 숏폼 샘플로 조정 필요",
+      "midpoint_window": "초기값 — 영상 중간 ±10초 안에서 대표 마커 선택. 숏폼 샘플로 조정 필요",
+      "w_fade": "초기값 — 페이드 인/아웃을 최우선으로 두는 20점(후보 선택 시에도 페이드 앵커 우선). 숏폼 샘플로 조정 필요",
+      "grid_priority_window": "숏폼 전용 — 허용 프레임 위의 (페이드 | 컷전환+대사 묵음) 마커가 영상 중간 ±10초 안이면 우선 선택",
+      "free_frames": "숏폼 전용 — 허용 프레임(:00~:03/:28~:29) 제한 해제. 컷·대사 공백 위치에 프레임 그대로 찍는다"
     }
   }
 ]

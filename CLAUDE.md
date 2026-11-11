@@ -18,6 +18,7 @@ cd /Users/choisoyeong/Desktop/vscode/adbreak_auto_pro
 ## 핵심 규칙 — 절대 바꾸지 말 것
 
 - **허용 프레임**: 30fps 기준 :00/:01/:02/:03/:28/:29 만 허용. 스냅 없음.
+  - **예외: 숏폼 장르만** `free_frames=true`(genres.json)로 제한 해제 — 컷·대사 공백 위치에 프레임 그대로 찍고 :00 보너스도 없음. 숏폼은 페이드 앵커를 최우선 선택(`w_fade`=20).
 - **XML 자동 저장 없음**: 분석 완료 후 파일을 자동으로 디스크에 쓰지 않음. UI 다운로드 버튼으로만 저장.
 - **CLIP 임계값**: 기본 `SAME_THRESHOLD = 0.80` (scene_verify.py). 유사도 < 0.80 = 진짜 장면 전환. 장르별 `clip_threshold`로 override (자취남=0.85 — 같은 집 안 약한 컷도 광고점, 측정[production 설정]: 컷앵커 마커 편당 5→11개·재현 31%→46%, `eval/measure_recall.py`로 재현).
 - **텍스트 유사도 임계값**: `TEXT_SIM_THRESHOLD = 0.75` (local_breaks.py). 미만이면 주제 전환 +4.0점.

@@ -201,16 +201,18 @@ def run_analysis(video_path, settings=None, progress=None):
     if settings.get("target_midpoint"):
         mid = duration / 2
         win = float(settings.get("midpoint_window", 20))
+        free = bool(settings.get("free_frames", False))
         cur = primary_slots[0][0]["time"] if primary_slots else None
+        lo, hi = max(20.5, mid - win), min(duration - 3.0, mid + win)  # 폴백도 중간 ±win 안에서만
         if cur is None or cur <= 20 or abs(cur - mid) > win:
             cands = [c for c in (
-                midpoint_silence_marker(voice, duration, 20.5, duration - 3.0,
-                                        float(settings.get("silence_min", 0.2)), fps, drop_frame),
-                midpoint_sentence_marker(segments, duration, 20.5, duration - 3.0, fps, drop_frame),
+                midpoint_silence_marker(voice, duration, lo, hi,
+                                        max(float(settings.get("silence_min", 0.2)), 0.35), fps, drop_frame, free),  # 폴백은 더 확실한 공백만(숏폼 전용)
+                midpoint_sentence_marker(segments, duration, lo, hi, fps, drop_frame, free, voice),
             ) if c]
             mm = min(cands, key=lambda c: abs(c["time"] - mid), default=None)  # 중간에 더 가까운 쪽
             if not mm:  # 대사 공백·문장 끝이 모두 없으면(대사 없는 영상) 중간에 가까운 CLIP 컷
-                mm = midpoint_cut_marker(clip_real_cuts, duration, 20.5, duration - 3.0, fps, drop_frame)
+                mm = midpoint_cut_marker(clip_real_cuts, duration, lo, hi, fps, drop_frame, free)
             if mm and (cur is None or cur <= 20 or abs(mm["time"] - mid) < abs(cur - mid)):
                 markers = sorted(markers + [mm], key=lambda m: m["time"])
                 primary_slots = [[mm]]

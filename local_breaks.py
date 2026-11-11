@@ -161,7 +161,7 @@ def _find_silence(voice_env, t0, t1, noise_floor, min_dur=None):
 
 
 def midpoint_silence_marker(voice_env, duration, min_t, max_t, min_dur=0.2,
-                            fps=FPS, drop_frame=False):
+                            fps=FPS, drop_frame=False, free=False):
     """영상 중간(duration/2)에 가장 가까운 대사 공백 마커. [min_t, max_t] 안의 시각만 허용.
 
     숏폼에서 후보가 없거나 앞쪽(20초 이하)에만 있을 때의 폴백. 공백 판정은
@@ -180,7 +180,7 @@ def midpoint_silence_marker(voice_env, duration, min_t, max_t, min_dur=0.2,
             continue
         if run >= need:
             s0, s1 = (i - run) / rate, i / rate
-            f = _allowed_frame_in(max(s0, min_t), min(s1, max_t), fps, drop_frame)
+            f = _allowed_frame_in(max(s0, min_t), min(s1, max_t), fps, drop_frame, free)
             if f is not None:
                 t = f / fps
                 if best is None or abs(t - mid) < abs(best[0] - mid):
@@ -195,19 +195,28 @@ def midpoint_silence_marker(voice_env, duration, min_t, max_t, min_dur=0.2,
             "next_sentence": "", "kill_reason": None}
 
 
-def midpoint_sentence_marker(segments, duration, min_t, max_t, fps=FPS, drop_frame=False):
+def midpoint_sentence_marker(segments, duration, min_t, max_t, fps=FPS, drop_frame=False, free=False,
+                             voice_env=None):
     """영상 중간에 가장 가까운 문장 끝 마커 (대사 공백이 없을 때의 마지막 폴백).
 
-    문장 끝(~다음 문장 시작, 최소 0.4초 여유) 안의 허용 프레임에 찍는다.
+    문장 끝~다음 문장 시작 사이의 프레임에만 찍는다(이어지는 문장은 제외).
     """
     sents = build_sentences(segments)
     mid, best = duration / 2.0, None
     for i, sn in enumerate(sents[:-1]):
+        if not (re.search(r"[0-9A-Za-z가-힣]", sn["text"])
+                and re.search(r"[0-9A-Za-z가-힣]", sents[i + 1]["text"])):
+            continue  # "!" 같은 Whisper 환각 문장은 무시
         end, nxt = sn["end"], sents[i + 1]["start"]
-        f = _allowed_frame_in(end, max(nxt, end + 0.4), fps, drop_frame)
+        f = _allowed_frame_in(end, nxt, fps, drop_frame, free)  # 다음 문장 시작 전까지만(이어지는 문장은 건너뜀)
         if f is None:
             continue
         t = f / fps
+        if voice_env and voice_env.get("db"):  # Whisper 시각이 틀려도 실제 음성이 없는 곳만
+            db, rate = voice_env["db"], voice_env["rate"]
+            k = min(int(t * rate), len(db) - 1)
+            if db[k] >= (1.0 - SILENCE_K) * _local_speech_db(voice_env, t) + SILENCE_K * _noise_floor(voice_env):
+                continue
         if min_t <= t <= max_t and (best is None or abs(t - mid) < abs(best[0] - mid)):
             best = (t, f, sn["text"], sents[i + 1]["text"])
     if best is None:
@@ -219,7 +228,7 @@ def midpoint_sentence_marker(segments, duration, min_t, max_t, fps=FPS, drop_fra
             "next_sentence": b, "kill_reason": None}
 
 
-def midpoint_cut_marker(real_cuts, duration, min_t, max_t, fps=FPS, drop_frame=False):
+def midpoint_cut_marker(real_cuts, duration, min_t, max_t, fps=FPS, drop_frame=False, free=False):
     """영상 중간(duration/2)에 가장 가까운 CLIP 확인 컷 마커. [min_t, max_t] 안의 컷만 허용.
 
     숏폼에서 대사 공백·문장 끝이 모두 없을 때(대사 없는 영상)의 마지막 폴백.
@@ -230,7 +239,7 @@ def midpoint_cut_marker(real_cuts, duration, min_t, max_t, fps=FPS, drop_frame=F
     for c in real_cuts:
         if not (min_t <= c <= max_t):
             continue
-        f = _nearest_allowed_frame(c, fps, drop_frame)
+        f = _nearest_allowed_frame(c, fps, drop_frame, free)
         if f is None:
             continue
         t = frame_to_seconds(f, fps)
@@ -252,10 +261,12 @@ def _get_ff(frame, fps, drop_frame):
     return frame % _base(fps)
 
 
-def _allowed_frame_in(s0, s1, fps=FPS, drop_frame=False):
+def _allowed_frame_in(s0, s1, fps=FPS, drop_frame=False, free=False):
     """침묵 [s0, s1] 안의 허용 프레임 반환. :00 우선, 없으면 :01~:03/끝 2프레임."""
     f0 = math.ceil(s0 * fps)
     f1 = math.floor(s1 * fps)
+    if free:  # 숏폼: 허용 프레임 제한 없음 — 구간 한가운데 프레임
+        return (f0 + f1) // 2 if f0 <= f1 else None
     b       = _base(fps)
     ff_cand = {1, 2, 3, b - 2, b - 1}
     cand = None
@@ -268,9 +279,11 @@ def _allowed_frame_in(s0, s1, fps=FPS, drop_frame=False):
     return cand
 
 
-def _nearest_allowed_frame(t, fps=FPS, drop_frame=False):
+def _nearest_allowed_frame(t, fps=FPS, drop_frame=False, free=False):
     """장면 컷 시간 t가 허용 프레임에 정확히 해당할 때만 반환. 스냅 없음."""
     f_center = int(round(t * fps))
+    if free:  # 숏폼: 컷 프레임 그대로
+        return f_center
     ff = _get_ff(f_center, fps, drop_frame)
     b  = _base(fps)
     if ff in FF_TOP | {1, 2, 3, b - 2, b - 1}:
@@ -302,7 +315,7 @@ def _classify_scene_transition(marker_time, cuts, real_cuts, checked_cuts):
 
 
 def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
-           w_scene=W_SCENE, fade_mode=False, fps=FPS, drop_frame=False):
+           w_scene=W_SCENE, fade_mode=False, fps=FPS, drop_frame=False, free=False):
     """Score a marker. Returns (score, reasons, has_signal, kill_reason).
 
     Every marker already sits in a verified silence after a completed sentence;
@@ -363,7 +376,7 @@ def _score(ended, nxt, frame, has_cut, cut_dist, silence_len,
         score += W_PAUSE
         reasons.append(f"긴 침묵({silence_len:.1f}초)")
 
-    if _get_ff(frame, fps, drop_frame) == 0:
+    if not free and _get_ff(frame, fps, drop_frame) == 0:  # free: 프레임 보너스 없음
         score += W_FRAME_TOP
         reasons.append("최우선 :00 프레임")
 
@@ -421,6 +434,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
     _fade_req_sil = bool(s.get("fade_require_silence", True))
     _fade_sil_bonus = float(s.get("fade_silence_bonus", 0.0))
     _w_quiet_cut = float(s.get("w_quiet_cut", 0.0))
+    _free = bool(s.get("free_frames", False))  # 숏폼: 허용 프레임 제한 해제
 
     # the video's own noise floor -- bottom of the adaptive silence scale
     noise_floor = (_noise_floor(voice_env)
@@ -449,7 +463,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
         if sil is None:
             continue
         # Place the marker on an allowed frame *inside* that silence.
-        frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame)
+        frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame, free=_free)
         if frame is None:                      # silence holds no allowed frame
             continue
         marker_time = frame_to_seconds(frame, fps)
@@ -469,7 +483,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
         sc, reasons, signal, kill_reason = _score(
             ended["text"], nxt["text"], frame, has_cut, cut_dist,
             sil[1] - sil[0],
-            w_scene=_w_scene, fps=fps, drop_frame=drop_frame)
+            w_scene=_w_scene, fps=fps, drop_frame=drop_frame, free=_free)
 
         # Path 1 조용한 구간 보너스: 침묵 마커 위치에서 loudness_env(전체주파수)도
         # 낮으면 BGM도 없는 것으로 판단해 가산점. loudness 없으면 voice_env 사용.
@@ -562,7 +576,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                     continue
 
             # 마커를 컷 시간에서 가장 가까운 허용 프레임(:00/:01/:02/:03/:28/:29)에 배치.
-            frame = _nearest_allowed_frame(cut_t, fps, drop_frame)
+            frame = _nearest_allowed_frame(cut_t, fps, drop_frame, _free)
             if frame is None:
                 continue
             marker_time = frame_to_seconds(frame, fps)
@@ -587,7 +601,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
             sc, reasons, signal, kill_reason = _score(
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0, silence_len=0.0,
-                w_scene=_w_scene, fps=fps, drop_frame=drop_frame)
+                w_scene=_w_scene, fps=fps, drop_frame=drop_frame, free=_free)
 
             # 텍스트 의미 유사도: 낮을수록 주제 전환 가능성 높음.
             text_sim = (text_sims or {}).get(cut_t)
@@ -701,10 +715,10 @@ def select_ad_breaks_local(segments, duration, settings=None,
 
             # 프레임 배치: 침묵이 있으면 그 침묵 안에, 없으면 V 꼭짓점 최근접 허용 프레임.
             if sil is not None:
-                frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame)
+                frame = _allowed_frame_in(*sil, fps=fps, drop_frame=drop_frame, free=_free)
                 silence_len = sil[1] - sil[0]
             else:
-                frame = _nearest_allowed_frame(fade_t, fps, drop_frame)
+                frame = _nearest_allowed_frame(fade_t, fps, drop_frame, _free)
                 silence_len = 0.0
             if frame is None:
                 continue
@@ -736,7 +750,7 @@ def select_ad_breaks_local(segments, duration, settings=None,
                 ended_text, nxt_text, frame,
                 has_cut=True, cut_dist=0.0,
                 silence_len=silence_len,
-                w_scene=_w_fade, fade_mode=True, fps=fps, drop_frame=drop_frame)
+                w_scene=_w_fade, fade_mode=True, fps=fps, drop_frame=drop_frame, free=_free)
 
             # 케이팝 등: 페이드 + 침묵 동반 시 가산 (다른 가수 등장 페이드인 신호).
             if sil is not None and _fade_sil_bonus:
@@ -798,8 +812,17 @@ def pick_primary(markers, duration, settings=None):
         ]
         if not eligible:
             return []
+        # 허용 프레임 위의 (페이드 앵커 | 컷전환+대사 묵음) 마커가 중간 ±grid_priority_window
+        # 안에 있으면 그것들을 우선. 없으면 전체에서 중간에 가장 가까운 것.
+        gw = float(s.get("grid_priority_window", 0))
+        near = [m for m in eligible
+                if gw and m.get("tier") is not None
+                and (m.get("fade_anchor") or m.get("has_cut"))
+                and abs(m["time"] - target) <= gw]
+        # 중간 ±gw 안에 우선 마커가 없으면 페이드 여부와 무관하게 전체에서 중간에 가장 가까운 것.
+        pool = near or eligible
         winner = min(
-            eligible,
+            pool,
             key=lambda m: (abs(m["time"] - target), -m["score"]),
         )
         return [[winner]]

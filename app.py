@@ -136,6 +136,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         settings["target_midpoint"] = bool(raw_settings.get("target_midpoint", False))
         settings["midpoint_window"] = float(raw_settings.get("midpoint_window", 0))
         settings["cut_requires_silence"] = bool(raw_settings.get("cut_requires_silence", False))
+        settings["free_frames"] = bool(raw_settings.get("free_frames", False))
+        settings["grid_priority_window"] = float(raw_settings.get("grid_priority_window", 0))
         # 페이드 침묵 관문 여부 (bool)
         val = raw_settings.get("fade_require_silence")
         if val is not None:
